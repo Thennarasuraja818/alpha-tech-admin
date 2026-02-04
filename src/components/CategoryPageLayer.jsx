@@ -65,18 +65,18 @@ const CategoryPageLayer = () => {
 
   // Effects
   useEffect(() => {
-  const type = searchParams.get("type");
+    const type = searchParams.get("type");
 
-  if (type === "subcategorylist") {
-    document.getElementById("pills-focus-details-tab").click();
-  }
-  else if (type === "childcategorylist") {
-    document.getElementById("pills-focus-profile-tab").click();
-  }
-  else {
-    document.getElementById("pills-focus-home-tab").click();
-  }
-}, []);
+    if (type === "subcategorylist") {
+      document.getElementById("pills-focus-details-tab").click();
+    }
+    else if (type === "childcategorylist") {
+      document.getElementById("pills-focus-profile-tab").click();
+    }
+    else {
+      document.getElementById("pills-focus-home-tab").click();
+    }
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -89,7 +89,7 @@ const CategoryPageLayer = () => {
   useEffect(() => {
     fetchChildCategoriesData();
   }, [childPageIndex, itemsPerPage, childCategorySearch, sorting]);
-  
+
   const columns = useMemo(() => [
     // S.No
     {
@@ -703,26 +703,26 @@ const CategoryPageLayer = () => {
     const value = e.target.value;
     setCategorySearch(value);
     if (categorySearchRef.current) clearTimeout(categorySearchRef.current);
-      setPageIndex(0);
-      fetchData();
+    setPageIndex(0);
+    fetchData();
   };
   const handleSubcategorySearch = (e) => {
     const value = e.target.value;
     setSubcategorySearch(value);
     if (subcategorySearchRef.current) clearTimeout(subcategorySearchRef.current);
-      setSubPageIndex(0);
-      fetchSubCategoriesData();
+    setSubPageIndex(0);
+    fetchSubCategoriesData();
   };
   const handleChildCategorySearch = (e) => {
     const value = e.target.value;
     setChildCategorySearch(value);
     if (childCategorySearchRef.current) clearTimeout(childCategorySearchRef.current);
-      setChildPageIndex(0);
-      fetchChildCategoriesData();
+    setChildPageIndex(0);
+    fetchChildCategoriesData();
   };
-  console.log(categoryData,"categoryData");
-  console.log(subCategorieById,"selectedCategory")
-  console.log(childCategorieById,"child")
+  console.log(categoryData, "categoryData");
+  console.log(subCategorieById, "selectedCategory")
+  console.log(childCategorieById, "child")
   return (
     <div>
       <div className="col-xxl-12">
@@ -740,7 +740,7 @@ const CategoryPageLayer = () => {
                   data-bs-toggle="pill"
                   data-bs-target="#pills-focus-home"
                   type="button"
-                  // onClick={() => navigate("/category")}
+                // onClick={() => navigate("/category")}
                 >
                   Category List
                 </button>
@@ -753,23 +753,23 @@ const CategoryPageLayer = () => {
                   data-bs-toggle="pill"
                   data-bs-target="#pills-focus-details"
                   type="button"
-                  // onClick={() => navigate("/category?type=subcategorylist")}
+                // onClick={() => navigate("/category?type=subcategorylist")}
                 >
                   Sub Category List
                 </button>
 
               </li>
               <li className="nav-item" role="presentation">
-               <button
-                className="nav-link fw-semibold text-primary-light radius-4 px-16 py-10"
-                id="pills-focus-profile-tab"
-                data-bs-toggle="pill"
-                data-bs-target="#pills-focus-profile"
-                type="button"
+                <button
+                  className="nav-link fw-semibold text-primary-light radius-4 px-16 py-10"
+                  id="pills-focus-profile-tab"
+                  data-bs-toggle="pill"
+                  data-bs-target="#pills-focus-profile"
+                  type="button"
                 // onClick={() => navigate("/category?type=childcategorylist")}
-              >
-                Child Category List
-              </button>
+                >
+                  Child Category List
+                </button>
 
               </li>
             </ul>
@@ -1520,7 +1520,7 @@ const CategoryPageLayer = () => {
                   </div>
                   <div className="col-md-6">
                     <span className="fw-normal text-body">
-                      {childCategorieById?.subcategoryDetails?<>{childCategorieById?.subcategoryDetails?.name}</>:<>-</>}
+                      {childCategorieById?.subcategoryDetails ? <>{childCategorieById?.subcategoryDetails?.name}</> : <>-</>}
                     </span>
                   </div>
                 </div>
@@ -1531,7 +1531,7 @@ const CategoryPageLayer = () => {
                   </div>
                   <div className="col-md-6">
                     <span className="fw-normal text-body">
-                     {childCategorieById?.categoryDetails?<>{childCategorieById.categoryDetails.name}</>:<>{"N/A"}</>}
+                      {childCategorieById?.categoryDetails ? <>{childCategorieById.categoryDetails.name}</> : <>{"N/A"}</>}
                     </span>
                   </div>
                 </div>
@@ -1542,7 +1542,7 @@ const CategoryPageLayer = () => {
                   </div>
                   <div className="col-md-6">
                     <span className="fw-normal text-body">
-                      {childCategorieById?.description?<>{childCategorieById?.description}</>:<>-</>}
+                      {childCategorieById?.description ? <>{childCategorieById?.description}</> : <>-</>}
                     </span>
                   </div>
                 </div>
@@ -1646,7 +1646,7 @@ const CategoryPageLayer = () => {
                   </div>
                   <div className="col-md-6">
                     <span className="fw-normal text-body">
-                      {subCategorieById.description?<>{subCategorieById.description}</>:<>-</>}
+                      {subCategorieById.description ? <>{subCategorieById.description}</> : <>-</>}
                     </span>
                   </div>
                 </div>

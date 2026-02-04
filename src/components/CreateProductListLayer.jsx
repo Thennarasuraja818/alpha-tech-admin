@@ -51,7 +51,7 @@ const CreateProductListLayer = () => {
   const [initialData] = useState({
     category: "",
     subCategory: "",
-    childCategory: "",
+    // childCategory: "",
     brand: "",
     productName: "",
     productImage: [],
@@ -260,7 +260,7 @@ const CreateProductListLayer = () => {
       setFormData({
         category: resp.categoryId || "",
         subCategory: resp.subCategory || "",
-        childCategory: resp.childCategory || "",
+        // childCategory: resp.childCategory || "",
         brand: resp.brand || "",
         productName: resp.productName || "",
         hsn: resp.hsn || "",
@@ -725,11 +725,11 @@ const CreateProductListLayer = () => {
       "subCategory",
       "Sub Category is Required"
     );
-    checkRequired(
-      formData.childCategory,
-      "childCategory",
-      "Child Category is Required"
-    );
+    // checkRequired(
+    //   formData.childCategory,
+    //   "childCategory",
+    //   "Child Category is Required"
+    // );
     checkRequired(formData.brand, "brand", "Brand is Required");
     checkRequired(
       formData.productName,
@@ -747,13 +747,13 @@ const CreateProductListLayer = () => {
         "Please select at least one wholesaler attribute";
     }
 
-    if (
-      formData.isApplicableToCustomer &&
-      formData.customerAttribute.attributeId.length === 0
-    ) {
-      newErrors["customerAttribute"] =
-        "Please select at least one customer attribute";
-    }
+    // if (
+    //   formData.isApplicableToCustomer &&
+    //   formData.customerAttribute.attributeId.length === 0
+    // ) {
+    //   newErrors["customerAttribute"] =
+    //     "Please select at least one customer attribute";
+    // }
 
     // Product image validation
     if (!formData.productImage || formData.productImage.length === 0) {
@@ -895,7 +895,7 @@ const CreateProductListLayer = () => {
     setFormData({
       category: "",
       subCategory: "",
-      childCategory: "",
+      // childCategory: "",
       brand: "",
       productName: "",
       productImage: [],
@@ -956,7 +956,7 @@ const CreateProductListLayer = () => {
 
         formDataToSend.append("categoryId", formData.category);
         formDataToSend.append("subCategory", formData.subCategory);
-        formDataToSend.append("childCategory", formData.childCategory);
+        // formDataToSend.append("childCategory", formData.childCategory);
         formDataToSend.append("productName", formData.productName);
         formDataToSend.append("brand", formData.brand);
         formDataToSend.append("shortDescription", formData.shortDescription);
@@ -1057,7 +1057,7 @@ const CreateProductListLayer = () => {
         const formDataToSend = new FormData();
         formDataToSend.append("categoryId", formData.category);
         formDataToSend.append("subCategory", formData.subCategory);
-        formDataToSend.append("childCategory", formData.childCategory);
+        // formDataToSend.append("childCategory", formData.childCategory);
         formDataToSend.append("productName", formData.productName);
         formDataToSend.append("brand", formData.brand);
         formDataToSend.append("shortDescription", formData.shortDescription);
@@ -1323,7 +1323,7 @@ const CreateProductListLayer = () => {
                           </div>
                         </div>
 
-                        <div className="col-lg-4">
+                        {/* <div className="col-lg-4">
                           <div className="mb-3">
                             <label
                               className="form-label"
@@ -1358,7 +1358,7 @@ const CreateProductListLayer = () => {
                               </div>
                             )}
                           </div>
-                        </div>
+                        </div> */}
                       </div>
 
                       <div className="row">

@@ -42,7 +42,7 @@ const AttributePage = () => {
         setAttributeData(response.response.data || []);
         console.log(response.response.data, "response")
         setTotalPages(response.response.totalPages || 0);
-         setTotal(response.response.total || 0);
+        setTotal(response.response.total || 0);
       } else {
         console.error("Failed to fetch brand list");
       }
@@ -69,9 +69,10 @@ const AttributePage = () => {
     // }));
     if (name === "AttributeName") {
       // Only allow if the first character is a letter or if the input is empty
-      if (value === "" || /^[a-zA-Z]/.test(value)) {
-        setFormData((prev) => ({ ...prev, [name]: value }));
-      }
+
+      // if (value === "" || /^[a-zA-Z]/.test(value)) {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      // }
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -111,7 +112,7 @@ const AttributePage = () => {
         name: formData.AttributeName,
         value: formData.AttributeValue,
       };
-      console.log(input,"input")
+      console.log(input, "input")
       const response = await AttribiteApis.attributecreate(input);
 
       if (response.status) {
@@ -143,7 +144,7 @@ const AttributePage = () => {
         value: formData.AttributeValue,
         id: editId,
       };
-      console.log("enter here ",input)
+      console.log("enter here ", input)
       const response = await AttribiteApis.updateattribute(input, editId);
 
       if (response.status) {
@@ -259,44 +260,44 @@ const AttributePage = () => {
     ],
     [handleEdit, handleRemoveRow, canEdit, canDelete]
   );
-    const searchDebounceRef = useRef(null);
+  const searchDebounceRef = useRef(null);
 
-   const handleSearchChange = (e) => {
-        const value = e.target.value;
-        setSearch(value);
-        setPageIndex(0); // reset to first page
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+    setPageIndex(0); // reset to first page
 
-        if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
 
-        searchDebounceRef.current = setTimeout(() => {
-          fetchData(); // call API after debounce
-        }, 300); // 300ms debounce
-      };
+    searchDebounceRef.current = setTimeout(() => {
+      fetchData(); // call API after debounce
+    }, 300); // 300ms debounce
+  };
   return (
     <div className="card h-100 p-0 radius-12">
-    
+
       {canAdd && (
         <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
 
-                  <div style={{ position: "relative" }}>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Search..."
-                    style={{ maxWidth: 350 }}
-                    value={search}
-                    onChange={handleSearchChange}
-                  />
-                  <Icon
-                    icon="ic:baseline-search"
-                    style={{
-                      position: "absolute",
-                      right: 10,
-                      top: 10,
-                      fontSize: 20,
-                    }}
-                  />
-                </div>
+          <div style={{ position: "relative" }}>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search..."
+              style={{ maxWidth: 350 }}
+              value={search}
+              onChange={handleSearchChange}
+            />
+            <Icon
+              icon="ic:baseline-search"
+              style={{
+                position: "absolute",
+                right: 10,
+                top: 10,
+                fontSize: 20,
+              }}
+            />
+          </div>
           <div>
             <button
               type="button"
