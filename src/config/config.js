@@ -9,9 +9,9 @@ const config = {
     debug: true
   },
   production: {
-    apiUrl: process.env.REACT_APP_API_URL || 'https://api.nalsuvai.com/api/admin',
-    imageBaseUrl: process.env.REACT_APP_IMAGE_URL || 'https://api.nalsuvai.com/api/public',
-    fileDownloadUrl: process.env.REACT_APP_FILES_URL || 'https://api.nalsuvai.com/api',
+    apiUrl: process.env.REACT_APP_API_URL || 'https://alpha-tech-backend.onrender.com/api/admin',
+    imageBaseUrl: process.env.REACT_APP_IMAGE_URL || 'https://alpha-tech-backend.onrender.com/api/public',
+    fileDownloadUrl: process.env.REACT_APP_FILES_URL || 'https://alpha-tech-backend.onrender.com/api',
     debug: false
   }
 };
