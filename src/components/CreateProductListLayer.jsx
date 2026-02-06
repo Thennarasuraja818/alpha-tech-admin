@@ -874,10 +874,11 @@ const CreateProductListLayer = () => {
           }
         });
       });
-    } else if (formData.isApplicableToCustomer) {
-      newErrors["customerAttributeTable"] =
-        "Please generate and fill customer attribute table";
-    }
+    } 
+    // else if (formData.isApplicableToCustomer) {
+    //   newErrors["customerAttributeTable"] =
+    //     "Please generate and fill customer attribute table";
+    // }
 
     console.log("Validation errors:", newErrors);
     setErrors(newErrors);

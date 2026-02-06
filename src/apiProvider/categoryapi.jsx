@@ -8,8 +8,9 @@ class CategoryProvider extends BaseApiService {
   async addCategory(input) {
     try {
       const response = await this.post("/categories", input);
+      console.log('responce :', response);
 
-      if (response.status == 200 || response.status == 201) {
+      if (response?.data?.statusCode == 200 || response?.data?.statusCode == 201) {
         // ShowNotifications.showAlertNotification(response.data.message, true);
         return {
           status: true,
@@ -28,7 +29,7 @@ class CategoryProvider extends BaseApiService {
       };
     }
   }
- async getCategorylist() {
+  async getCategorylist() {
     try {
       const response = await this.get("/categories");
 

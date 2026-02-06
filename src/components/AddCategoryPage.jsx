@@ -165,7 +165,7 @@ const AddCategoryPage = () => {
         let addCategoryResponse;
 
         if (isEditMode) {
-        
+
           addCategoryResponse = await apiProvider.updateCategory(
             formData.id,
             input
@@ -174,14 +174,15 @@ const AddCategoryPage = () => {
           addCategoryResponse = await apiProvider.addCategory(input);
         }
 
-
+        console.log("addcategory :",addCategoryResponse);
         if (addCategoryResponse.status) {
-       
+
           const successMessage = isEditMode
             ? "Category updated successfully!"
             : "Category added successfully!";
           toast.success(successMessage);
-          setTimeout(() => navigate("/category"), 1000);
+          // setTimeout(() => navigate("/category"), 1000);
+          navigate("/category");
         } else {
           console.error(
             "Error adding category:",
@@ -258,9 +259,8 @@ const AddCategoryPage = () => {
         const updatedCategories = categoryResult.response.data.data.map(
           (ival) => ({
             ...ival,
-            categoryName: `${ival.categoryName} / ${
-              ival.categoryType === "1" ? "Online" : "Offline"
-            }`,
+            categoryName: `${ival.categoryName} / ${ival.categoryType === "1" ? "Online" : "Offline"
+              }`,
           })
         );
         setCategories(updatedCategories);
@@ -472,23 +472,23 @@ const AddCategoryPage = () => {
                       </div>
                     </div>
 
-                      <div className="col-sm-6" style={{ width:"50%" }}>
-                    <label className="form-label">Featured Category</label>
-                    <div className="position-relative" style={{ width:"100%" }}>
-                      <select
-                        className="form-select"
-                        name="featuredCategory"
-                        value={formData.featuredCategory ? "Yes" : "No"}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select Featured Category</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                      </select>
-                      <div className="wizard-form-error" />
+                    <div className="col-sm-6" style={{ width: "50%" }}>
+                      <label className="form-label">Featured Category</label>
+                      <div className="position-relative" style={{ width: "100%" }}>
+                        <select
+                          className="form-select"
+                          name="featuredCategory"
+                          value={formData.featuredCategory ? "Yes" : "No"}
+                          onChange={handleChange}
+                        >
+                          <option value="">Select Featured Category</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
+                        </select>
+                        <div className="wizard-form-error" />
+                      </div>
                     </div>
-                  </div>
-                 {/* <div className="col-sm-6" style={{width:"50%"}}>
+                    {/* <div className="col-sm-6" style={{width:"50%"}}>
                       <label className="form-label">Featured Category</label>
                       <div style={{ 
                         width: "100%", 
