@@ -75,29 +75,22 @@ const BannerManagement = () => {
   const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    const validFiles = [];
+    const file = e.target.files[0];
 
-    files.forEach((file) => {
+    if (file) {
       if (file.size <= MAX_FILE_SIZE) {
-        validFiles.push(file);
+        setFormData((prev) => ({
+          ...prev,
+          images: [file],
+        }));
+        if (errors.images) {
+          setErrors((prev) => ({ ...prev, images: "" }));
+        }
       } else {
         if (fileInputRef.current) {
           fileInputRef.current.value = null;
         }
-        toast.warning(
-          `${file.name} exceeds ${MAX_FILE_SIZE_MB}MB and was skipped.`
-        );
-      }
-    });
-
-    if (validFiles.length > 0) {
-      setFormData((prev) => ({
-        ...prev,
-        images: [...prev.images, ...validFiles],
-      }));
-      if (errors.images) {
-        setErrors((prev) => ({ ...prev, images: "" }));
+        toast.warning(`${file.name} exceeds ${MAX_FILE_SIZE_MB}MB.`);
       }
     }
   };
@@ -422,20 +415,18 @@ const BannerManagement = () => {
 
                       <div className="col-12">
                         <label className="form-label">
-                          {isEditMode ? "Add More Images" : "Upload Images*"}
+                          {isEditMode ? "Change Image" : "Upload Image*"}
                         </label>
                         <input
                           type="file"
                           className="form-control"
-                          multiple
                           ref={fileInputRef}
                           accept="image/*"
                           onChange={handleFileChange}
                           disabled={isLoading}
                         />
                         <small className="text-muted">
-                          Select multiple images (JPEG, PNG, max{" "}
-                          {MAX_FILE_SIZE_MB}MB each)
+                          Select an image (JPEG, PNG, max {MAX_FILE_SIZE_MB}MB)
                         </small>
                         {errors.images && (
                           <div className="text-danger small">
