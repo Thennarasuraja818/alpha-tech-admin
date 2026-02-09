@@ -103,6 +103,12 @@ const CreateProductListLayer = () => {
   const [attributeData, setAttribute] = useState([]);
   const [vendorData, setVendor] = useState([]);
 
+  const [sizes, setSizes] = useState({
+    as_568a_standard: [],  // AS 568A sizes
+    jis_b_2401_standard: []  // JIS B 2401 sizes
+  });
+  const [isTechnicalSpecsOpen, setIsTechnicalSpecsOpen] = useState(false);
+
   const [taxes, setTaxes] = useState([]);
   useEffect(() => {
     fetchData();
@@ -121,6 +127,71 @@ const CreateProductListLayer = () => {
       setCategories(response?.data?.data?.items);
     }
   };
+
+  const handleAddAS568ASize = () => {
+    const newSize = {
+      sizeCode: "",
+
+      // NOMINAL (INCHES)
+      nominal_id_in: "",
+      nominal_od_in: "",
+      nominal_cs_in: "",
+
+      // STANDARD (INCHES)
+      standard_id_in: "",
+      standard_id_tolerance_in: "",
+      standard_cs_in: "",
+      standard_cs_tolerance_in: "",
+
+      // METRIC (mm)
+      metric_id_mm: "",
+      metric_id_tolerance_mm: "",
+      metric_cs_mm: "",
+      metric_cs_tolerance_mm: ""
+    };
+    setSizes(prev => ({
+      ...prev,
+      as_568a_standard: [...prev.as_568a_standard, newSize]
+    }));
+  };
+
+  // Function to add JIS B 2401 size row
+  const handleAddJISSize = () => {
+    const newSize = {
+      sizeCode: "",
+
+      // METRIC (mm)
+      metric_id_mm: "",
+      metric_id_tolerance_mm: "",
+      metric_cs_mm: "",
+      metric_cs_tolerance_mm: "",
+
+      // INCHES
+      inch_id_in: "",
+      inch_id_tolerance_in: "",
+      inch_cs_in: "",
+      inch_cs_tolerance_in: ""
+    };
+    setSizes(prev => ({
+      ...prev,
+      jis_b_2401_standard: [...prev.jis_b_2401_standard, newSize]
+    }));
+  };
+
+  // Function to handle size input changes
+  const handleSizeChange = (standard, index, field, value) => {
+    const updatedSizes = { ...sizes };
+    updatedSizes[standard][index][field] = value;
+    setSizes(updatedSizes);
+  };
+
+  // Function to remove a size row
+  const handleRemoveSize = (standard, index) => {
+    const updatedSizes = { ...sizes };
+    updatedSizes[standard] = updatedSizes[standard].filter((_, i) => i !== index);
+    setSizes(updatedSizes);
+  };
+
 
   useEffect(() => {
     const slug = formData.productName
@@ -161,19 +232,18 @@ const CreateProductListLayer = () => {
     }
   };
   useEffect(() => {
-    childCategoryDtls();
-  }, [formData?.subCategory]);
-  const childCategoryDtls = async () => {
-    try {
-      const input = {
-        subcategoryId: formData.subCategory,
-        limit: 100,
-        page: 0,
-      };
-      const response = await childCategory.getChildCategorys(input);
+    if (formData?.subCategory) {
+      childCategoryDtls(formData?.subCategory);
+    }
 
+  }, [formData?.subCategory]);
+  const childCategoryDtls = async (subCategoryId) => {
+    try {
+      console.log("Child Category API Input:", subCategoryId);
+      const response = await childCategory.getChildCategoryBysubCategoryId(subCategoryId);
+      console.log("Child Category API Response:", response);
       if (response?.status) {
-        const items = response.response?.data?.items || [];
+        const items = response.response?.data || [];
         setchldCategory(items);
       }
     } catch (error) {
@@ -316,6 +386,41 @@ const CreateProductListLayer = () => {
         isIncentive: resp.isIncentive || false,
         showToLineman: resp.showToLineman || false,
       });
+
+      setSizes({
+        as_568a_standard: resp.as_568a_standard?.map(spec => ({
+          sizeCode: spec.sizeCode || "",
+          nominal_id_in: spec.nominal_id_in || "",
+          nominal_od_in: spec.nominal_od_in || "",
+          nominal_cs_in: spec.nominal_cs_in || "",
+          standard_id_in: spec.standard_id_in || "",
+          standard_id_tolerance_in: spec.standard_id_tolerance_in || "",
+          standard_cs_in: spec.standard_cs_in || "",
+          standard_cs_tolerance_in: spec.standard_cs_tolerance_in || "",
+          metric_id_mm: spec.metric_id_mm || "",
+          metric_id_tolerance_mm: spec.metric_id_tolerance_mm || "",
+          metric_cs_mm: spec.metric_cs_mm || "",
+          metric_cs_tolerance_mm: spec.metric_cs_tolerance_mm || ""
+        })) || [],
+
+        jis_b_2401_standard: resp.jis_b_2401_standard?.map(spec => ({
+          sizeCode: spec.sizeCode || "",
+          metric_id_mm: spec.metric_id_mm || "",
+          metric_id_tolerance_mm: spec.metric_id_tolerance_mm || "",
+          metric_cs_mm: spec.metric_cs_mm || "",
+          metric_cs_tolerance_mm: spec.metric_cs_tolerance_mm || "",
+          inch_id_in: spec.inch_id_in || "",
+          inch_id_tolerance_in: spec.inch_id_tolerance_in || "",
+          inch_cs_in: spec.inch_cs_in || "",
+          inch_cs_tolerance_in: spec.inch_cs_tolerance_in || ""
+        })) || []
+      });
+
+      // Open the technical specifications section if there's data
+      if (resp.as_568a_standard?.length > 0 || resp.jis_b_2401_standard?.length > 0) {
+        setIsTechnicalSpecsOpen(true);
+      }
+
     }
     setLoading(false);
   };
@@ -939,6 +1044,15 @@ const CreateProductListLayer = () => {
       isApplicableToWholesaler: false,
       lowStockQuantity: 0,
     });
+    // Reset technical specifications
+    setSizes({
+      as_568a_standard: [],
+      jis_b_2401_standard: []
+    });
+
+    // Reset technical specs section state
+    setIsTechnicalSpecsOpen(false);
+
     setTimeout(() => {
       navigate("/product");
     }, 1000);
@@ -1044,9 +1158,26 @@ const CreateProductListLayer = () => {
           "showToLineman",
           formData.showToLineman === true
         );
-        console.log("formDataToSend", formDataToSend);
+        // Send sizes separately to match backend schema
+        if (sizes.as_568a_standard.length > 0) {
+          formDataToSend.append("as_568a_standard", JSON.stringify(sizes.as_568a_standard));
+        }
+        if (sizes.jis_b_2401_standard.length > 0) {
+          formDataToSend.append("jis_b_2401_standard", JSON.stringify(sizes.jis_b_2401_standard));
+        }
+        // Debug FormData contents
+        console.log("=== FormData Contents ===");
+        for (let [key, value] of formDataToSend.entries()) {
+          if (value instanceof File) {
+            console.log(key, ":", value.name, `(${value.type})`);
+          } else {
+            console.log(key, ":", value);
+          }
+        }
+        console.log("========================");
 
         const response = await productApi.productcreate(formDataToSend);
+        console.log("response", response);
         if (response.status) {
           setTimeout(() => {
             handleClose();
@@ -1149,6 +1280,16 @@ const CreateProductListLayer = () => {
           "showToLineman",
           String(formData.showToLineman === true)
         );
+
+        // Send sizes separately to match backend schema
+        if (sizes.as_568a_standard.length > 0) {
+          formDataToSend.append("as_568a_standard", JSON.stringify(sizes.as_568a_standard));
+        }
+        if (sizes.jis_b_2401_standard.length > 0) {
+          formDataToSend.append("jis_b_2401_standard", JSON.stringify(sizes.jis_b_2401_standard));
+        }
+
+
 
         formDataToSend.append("id", selector.id);
         const response = await productApi.updateproduct(
@@ -1306,7 +1447,7 @@ const CreateProductListLayer = () => {
                               value={formData.subCategory}
                               onChange={(e) => {
                                 handleChange(e);
-                                childCategoryDtls(e.target.value);
+                                // childCategoryDtls(e.target.value);
                               }}
                             >
                               <option value="">Select Sub Category</option>
@@ -1704,8 +1845,410 @@ const CreateProductListLayer = () => {
                 </div>
               </div>
 
+              {/* Product Sizes Section */}
+              <div className="card mb-4">
+                <a
+                  href="#technical-specs-collapse"
+                  className={`text-body ${isTechnicalSpecsOpen ? "" : "collapsed"}`}
+                  data-bs-toggle="collapse"
+                  aria-expanded={isTechnicalSpecsOpen}
+                  aria-controls="technical-specs-collapse"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsTechnicalSpecsOpen(!isTechnicalSpecsOpen);
+                  }}
+                >
+                  <div className="p-4">
+                    <div className="d-flex align-items-center">
+                      <div className="flex-shrink-0 me-3">
+                        <div className="avatar">
+                          <div className="avatar-title custom-avatar rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center">
+                            <h5 className="text-primary font-size-17 mb-0">02</h5>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex-grow-1 overflow-hidden">
+                        <h5 className="font-size-16 mb-1">Technical Specifications</h5>
+                        <p className="text-muted text-truncate mb-0">
+                          Add product technical specifications and measurements
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <i
+                          className={`mdi mdi-chevron-${isTechnicalSpecsOpen ? "up" : "down"} accor-down-icon font-size-24`}
+                        ></i>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+
+                <div
+                  id="technical-specs-collapse"
+                  className={`collapse ${isTechnicalSpecsOpen ? "show" : ""}`}
+                  data-bs-parent="#addproduct-accordion"
+                >
+                  <div className="p-4 border-top">
+
+                    {/* AS 568A Standard Table */}
+                    <div className="mb-5">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h6 className="mb-0 text-primary">
+                          <i className="mdi mdi-circle-medium me-1"></i>
+                          AS 568A Standard
+                        </h6>
+                        <Button
+                          onClick={handleAddAS568ASize}
+                          leftIcon={<IconPlus size={14} />}
+                          variant="light"
+                          color="blue"
+                          size="sm"
+                        >
+                          Add AS 568A Size
+                        </Button>
+                      </div>
+
+                      {sizes.as_568a_standard.length > 0 ? (
+                        <div className="table-responsive" style={{ overflowX: 'auto' }}>
+                          <table className="table table-bordered" style={{ fontSize: '12px' }}>
+                            <thead>
+                              <tr>
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>AS 568A SIZE</th>
+                                <th colSpan="3" className="text-center">NOMINAL (REF.) MEASUREMENTS IN INCHES</th>
+                                <th colSpan="4" className="text-center">STANDARD MEASUREMENTS IN INCHES</th>
+                                <th colSpan="4" className="text-center">METRIC MEASUREMENTS IN MILLIMETERS</th>
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Action</th>
+                              </tr>
+                              <tr>
+                                {/* Nominal Inches Headers */}
+                                <th>ID</th>
+                                <th>OD</th>
+                                <th>CS</th>
+
+                                {/* Standard Inches Headers */}
+                                <th>ID</th>
+                                <th>±</th>
+                                <th>CS</th>
+                                <th>±</th>
+
+                                {/* Metric Headers */}
+                                <th>ID</th>
+                                <th>±</th>
+                                <th>CS</th>
+                                <th>±</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sizes.as_568a_standard.map((size, index) => (
+                                <tr key={index}>
+                                  {/* AS 568A Size Code */}
+                                  <td>
+                                    <TextInput
+                                      placeholder="A0001"
+                                      value={size.sizeCode}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'sizeCode', e.target.value)}
+                                      style={{ minWidth: '70px', fontSize: '11px' }}
+                                    />
+                                  </td>
+
+                                  {/* Nominal Inches (ID, OD, CS) */}
+                                  <td>
+                                    <TextInput
+                                      placeholder="1/32"
+                                      value={size.nominal_id_in}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'nominal_id_in', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="3/32"
+                                      value={size.nominal_od_in}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'nominal_od_in', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="1/32"
+                                      value={size.nominal_cs_in}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'nominal_cs_in', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td>
+
+                                  {/* Standard Inches (ID with tolerance) */}
+                                  <td>
+                                    <TextInput
+                                      placeholder="0.029"
+                                      value={size.standard_id_in}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'standard_id_in', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="0.004"
+                                      value={size.standard_id_tolerance_in}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'standard_id_tolerance_in', e.target.value)}
+                                      style={{ minWidth: '50px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="0.040"
+                                      value={size.standard_cs_in}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'standard_cs_in', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="0.003"
+                                      value={size.standard_cs_tolerance_in}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'standard_cs_tolerance_in', e.target.value)}
+                                      style={{ minWidth: '50px', fontSize: '11px' }}
+                                    />
+                                  </td>
+
+                                  {/* Metric mm (ID with tolerance) */}
+                                  <td>
+                                    <TextInput
+                                      placeholder="0.74"
+                                      value={size.metric_id_mm}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'metric_id_mm', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="0.10"
+                                      value={size.metric_id_tolerance_mm}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'metric_id_tolerance_mm', e.target.value)}
+                                      style={{ minWidth: '50px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="1.02"
+                                      value={size.metric_cs_mm}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'metric_cs_mm', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="0.08"
+                                      value={size.metric_cs_tolerance_mm}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'metric_cs_tolerance_mm', e.target.value)}
+                                      style={{ minWidth: '50px', fontSize: '11px' }}
+                                    />
+                                  </td>
+
+                                  {/* Action */}
+                                  <td>
+                                    <ActionIcon
+                                      onClick={() => handleRemoveSize('as_568a_standard', index)}
+                                      color="red"
+                                      variant="light"
+                                      size="xs"
+                                      title="Remove"
+                                    >
+                                      <IconTrash size={12} />
+                                    </ActionIcon>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="text-center py-3 border rounded">
+                          <p className="text-muted mb-2">No AS 568A sizes added yet</p>
+                          <Button
+                            onClick={handleAddAS568ASize}
+                            leftIcon={<IconPlus size={14} />}
+                            variant="outline"
+                            color="blue"
+                            size="sm"
+                          >
+                            Add First AS 568A Size
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* JIS B 2401 Standard Table */}
+                    <div>
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h6 className="mb-0 text-success">
+                          <i className="mdi mdi-circle-medium me-1"></i>
+                          JIS B 2401 Standard
+                        </h6>
+                        <Button
+                          onClick={handleAddJISSize}
+                          leftIcon={<IconPlus size={14} />}
+                          variant="light"
+                          color="green"
+                          size="sm"
+                        >
+                          Add JIS Size
+                        </Button>
+                      </div>
+
+                      {sizes.jis_b_2401_standard.length > 0 ? (
+                        <div className="table-responsive">
+                          <table className="table table-bordered" style={{ fontSize: '12px' }}>
+                            <thead>
+                              <tr>
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>JIS B 2401 SIZE</th>
+                                <th colSpan="4" className="text-center">MEASUREMENTS IN MILLIMETERS</th>
+                                <th colSpan="4" className="text-center">MEASUREMENTS IN INCHES</th>
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Action</th>
+                              </tr>
+                              <tr>
+                                {/* Metric Headers */}
+                                <th>ID</th>
+                                <th>±</th>
+                                <th>CS</th>
+                                <th>±</th>
+
+                                {/* Inches Headers */}
+                                <th>ID</th>
+                                <th>±</th>
+                                <th>CS</th>
+                                <th>±</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sizes.jis_b_2401_standard.map((size, index) => (
+                                <tr key={index}>
+                                  {/* JIS Size Code */}
+                                  <td>
+                                    <TextInput
+                                      placeholder="G25 or P25"
+                                      value={size.sizeCode}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'sizeCode', e.target.value)}
+                                      style={{ minWidth: '70px', fontSize: '11px' }}
+                                    />
+                                  </td>
+
+                                  {/* Metric mm (ID with tolerance) */}
+                                  <td>
+                                    <TextInput
+                                      placeholder="24.40"
+                                      value={size.metric_id_mm}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'metric_id_mm', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="0.25"
+                                      value={size.metric_id_tolerance_mm}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'metric_id_tolerance_mm', e.target.value)}
+                                      style={{ minWidth: '50px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="3.10"
+                                      value={size.metric_cs_mm}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'metric_cs_mm', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="0.10"
+                                      value={size.metric_cs_tolerance_mm}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'metric_cs_tolerance_mm', e.target.value)}
+                                      style={{ minWidth: '50px', fontSize: '11px' }}
+                                    />
+                                  </td>
+
+                                  {/* Inches (ID with tolerance) */}
+                                  <td>
+                                    <TextInput
+                                      placeholder="0.961"
+                                      value={size.inch_id_in}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'inch_id_in', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="0.010"
+                                      value={size.inch_id_tolerance_in}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'inch_id_tolerance_in', e.target.value)}
+                                      style={{ minWidth: '50px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="0.122"
+                                      value={size.inch_cs_in}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'inch_cs_in', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="0.004"
+                                      value={size.inch_cs_tolerance_in}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'inch_cs_tolerance_in', e.target.value)}
+                                      style={{ minWidth: '50px', fontSize: '11px' }}
+                                    />
+                                  </td>
+
+                                  {/* Action */}
+                                  <td>
+                                    <ActionIcon
+                                      onClick={() => handleRemoveSize('jis_b_2401_standard', index)}
+                                      color="red"
+                                      variant="light"
+                                      size="xs"
+                                      title="Remove"
+                                    >
+                                      <IconTrash size={12} />
+                                    </ActionIcon>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="text-center py-3 border rounded">
+                          <p className="text-muted mb-2">No JIS B 2401 sizes added yet</p>
+                          <Button
+                            onClick={handleAddJISSize}
+                            leftIcon={<IconPlus size={14} />}
+                            variant="outline"
+                            color="green"
+                            size="sm"
+                          >
+                            Add First JIS Size
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-muted small mt-3">
+                      <p className="mb-1">
+                        <i className="mdi mdi-information-outline me-1"></i>
+                        <strong>AS 568A:</strong> NOMINAL (fraction inches), STANDARD (decimal inches), METRIC (mm)
+                      </p>
+                      <p className="mb-0">
+                        <i className="mdi mdi-information-outline me-1"></i>
+                        <strong>JIS B 2401:</strong> G-series (static seal), P-series (dynamic seal) - Both metric and inches
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Attributes Section */}
-              <div className="card">
+              <div className="card mb-4">
                 <div className="p-4">
                   <div
                     className="d-flex align-items-center"

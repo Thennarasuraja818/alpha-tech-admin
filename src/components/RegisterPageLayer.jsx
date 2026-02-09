@@ -142,7 +142,7 @@ const RegisterForm = () => {
             <div className="col-lg-12">
               <div className="text-center p-4">
                 <p>
-                  © {new Date().getFullYear()} Nalsuvai. All Rights Reserved. Developed &amp; Maintained By Ocean Softwares
+                  © {new Date().getFullYear()} Alpha Tech. All Rights Reserved. Developed &amp; Maintained By Ocean Softwares
                 </p>
               </div>
             </div>
