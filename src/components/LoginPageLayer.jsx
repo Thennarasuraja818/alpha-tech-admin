@@ -333,7 +333,7 @@ export default function LoginPageLayer() {
                     <>
                       <div className="text-center mt-2">
                         <h5>Welcome Back!</h5>
-                        <p className="text-muted">Sign in to continue to Nalsuvai.</p>
+                        <p className="text-muted">Sign in to continue to Alpha Tech.</p>
                       </div>
 
                       <div className="p-2 mt-4">

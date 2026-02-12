@@ -55,6 +55,21 @@ class ChildCategoryProvider {
             return null;
         }
     }
+
+    async getChildCategoryBysubCategoryId(subCategoryId) {
+        try {
+
+            const response = await apiClient.get("/child-categories/subcategory/" + subCategoryId);
+            if (response.status == 200 || response.status == 201) {
+                return { status: response.status, response: response.data };
+            } else {
+                return null;
+            }
+        } catch (error) {
+            // notification.showAxiosErrorAlert(error);
+            return null;
+        }
+    }
     async getChildCategoryById(input) {
         try {
             const response = await apiClient.get(`/child-categories/${input}`);

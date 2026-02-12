@@ -95,7 +95,7 @@ export default function ResetPasswordLayer() {
                         <div className="col-lg-12">
                             <div className="text-center p-4">
                                 <p>
-                                    © {new Date().getFullYear()} 2025 Nalsuvai. All Rights
+                                    © {new Date().getFullYear()} 2025 Alpha Tech. All Rights
                                     Reserved. Developed &amp; Maintained By Ocean Softwares
                                 </p>
                             </div>
