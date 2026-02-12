@@ -92,8 +92,8 @@ const CreateProductListLayer = () => {
     lowStockQuantity: 0,
     quantityPerPack: 0,
     packingType: "",
-    isIncentive: false,
-    showToLineman: false,
+    // isIncentive: false,
+    // showToLineman: false,
   });
   const [formData, setFormData] = useState(initialData);
   const [categoryData, setCategories] = useState([]);
@@ -383,8 +383,8 @@ const CreateProductListLayer = () => {
         isApplicableToWholesaler: resp.applicableForWholesale || false,
         quantityPerPack: resp.quantityPerPack || 0,
         packingType: resp.packingType || "",
-        isIncentive: resp.isIncentive || false,
-        showToLineman: resp.showToLineman || false,
+        // isIncentive: resp.isIncentive || false,
+        // showToLineman: resp.showToLineman || false,
       });
 
       setSizes({
@@ -655,9 +655,9 @@ const CreateProductListLayer = () => {
         shippingWeight: "",
         customermrp: "",
         price: "",
-        silver: "",
-        gold: "",
-        platinum: "",
+        // silver: "",
+        // gold: "",
+        // platinum: "",
       },
 
       [
@@ -667,9 +667,9 @@ const CreateProductListLayer = () => {
         "shippingWeight",
         "customermrp",
         "price",
-        "silver",
-        "gold",
-        "platinum",
+        // "silver",
+        // "gold",
+        // "platinum",
       ]
     );
   };
@@ -732,9 +732,9 @@ const CreateProductListLayer = () => {
       shippingWeight: "",
       customermrp: "",
       price: "",
-      silver: "",
-      gold: "",
-      platinum: "",
+      // silver: "",
+      // gold: "",
+      // platinum: "",
     };
 
 
@@ -844,21 +844,21 @@ const CreateProductListLayer = () => {
     checkRequired(formData.slug, "slug", "Slug is Required");
 
     // Check if at least one attribute is selected
-    if (
-      formData.isApplicableToWholesaler &&
-      formData.wholesalerAttribute.attributeId.length === 0
-    ) {
-      newErrors["wholesalerAttribute"] =
-        "Please select at least one wholesaler attribute";
-    }
-
     // if (
-    //   formData.isApplicableToCustomer &&
-    //   formData.customerAttribute.attributeId.length === 0
+    //   formData.isApplicableToWholesaler &&
+    //   formData.wholesalerAttribute.attributeId.length === 0
     // ) {
-    //   newErrors["customerAttribute"] =
-    //     "Please select at least one customer attribute";
+    //   newErrors["wholesalerAttribute"] =
+    //     "Please select at least one wholesaler attribute";
     // }
+
+    if (
+      formData.isApplicableToCustomer &&
+      formData.customerAttribute.attributeId.length === 0
+    ) {
+      newErrors["customerAttribute"] =
+        "Please select at least one customer attribute";
+    }
 
     // Product image validation
     if (!formData.productImage || formData.productImage.length === 0) {
@@ -944,9 +944,9 @@ const CreateProductListLayer = () => {
         { field: "shippingWeight", label: "Shipping Weight", isNum: true },
         { field: "customermrp", label: "Customer MRP", isNum: true },
         { field: "price", label: "Price", isNum: true },
-        { field: "silver", label: "Silver price", isNum: true },
-        { field: "gold", label: "Gold price", isNum: true },
-        { field: "platinum", label: "Platinum price", isNum: true },
+        // { field: "silver", label: "Silver price", isNum: true },
+        // { field: "gold", label: "Gold price", isNum: true },
+        // { field: "platinum", label: "Platinum price", isNum: true },
 
       ];
 
@@ -1153,11 +1153,11 @@ const CreateProductListLayer = () => {
         formDataToSend.append("lowStockQuantity", formData.lowStockQuantity);
         formDataToSend.append("quantityPerPack", formData.quantityPerPack);
         formDataToSend.append("packingType", formData.packingType);
-        formDataToSend.append("isIncentive", formData.isIncentive === true);
-        formDataToSend.append(
-          "showToLineman",
-          formData.showToLineman === true
-        );
+        // formDataToSend.append("isIncentive", formData.isIncentive === true);
+        // formDataToSend.append(
+        //   "showToLineman",
+        //   formData.showToLineman === true
+        // );
         // Send sizes separately to match backend schema
         if (sizes.as_568a_standard.length > 0) {
           formDataToSend.append("as_568a_standard", JSON.stringify(sizes.as_568a_standard));
@@ -1272,14 +1272,14 @@ const CreateProductListLayer = () => {
         formDataToSend.append("lowStockQuantity", formData.lowStockQuantity);
         formDataToSend.append("quantityPerPack", formData.quantityPerPack);
         formDataToSend.append("packingType", formData.packingType);
-        formDataToSend.append(
-          "isIncentive",
-          String(formData.isIncentive === true)
-        );
-        formDataToSend.append(
-          "showToLineman",
-          String(formData.showToLineman === true)
-        );
+        // formDataToSend.append(
+        //   "isIncentive",
+        //   String(formData.isIncentive === true)
+        // );
+        // formDataToSend.append(
+        //   "showToLineman",
+        //   String(formData.showToLineman === true)
+        // );
 
         // Send sizes separately to match backend schema
         if (sizes.as_568a_standard.length > 0) {
@@ -1761,7 +1761,7 @@ const CreateProductListLayer = () => {
                         </div>
                       </div>
 
-                      <div className="row mb-3">
+                      {/* <div className="row mb-3">
                         <div className="col-md-3 d-flex align-items-center">
                           <div className="form-check pt-4">
                             <label
@@ -1799,7 +1799,7 @@ const CreateProductListLayer = () => {
                             />
                           </div>
                         </div>
-                      </div>
+                      </div> */}
 
                       <div className="row">
                         <div className="col-xl-12">
@@ -2280,7 +2280,7 @@ const CreateProductListLayer = () => {
                 </div>
                 {isAttributesOpen && (
                   <div className="p-4 border-top">
-                    <h5 className="font-size-18 mb-4">Wholesaler Attribute</h5>
+                    {/* <h5 className="font-size-18 mb-4">Wholesaler Attribute</h5>
                     <form>
                       <div className="row">
                         <div>
@@ -2398,7 +2398,6 @@ const CreateProductListLayer = () => {
                                         </td>
                                       </tr>
 
-                                      {/* Error display row */}
                                       {Object.keys(errors).some(
                                         (key) =>
                                           key.includes(`wholesaler_`) &&
@@ -2406,7 +2405,6 @@ const CreateProductListLayer = () => {
                                       ) && (
                                           <tr>
                                             <td colSpan={columns.length + 1}>
-                                              {/* Display all errors for this row */}
                                               {Object.keys(errors).map((key) => {
                                                 if (
                                                   key.startsWith(
@@ -2480,7 +2478,7 @@ const CreateProductListLayer = () => {
                           </div>
                         </div>
                       </div>
-                    </form>
+                    </form> */}
 
                     <h5 className="font-size-18 mt-5 mb-4">
                       Customer Attribute
@@ -2541,9 +2539,9 @@ const CreateProductListLayer = () => {
                                               "shippingWeight",
                                               "customermrp",
                                               "price",
-                                              "silver",
-                                              "gold",
-                                              "platinum",
+                                              // "silver",
+                                              // "gold",
+                                              // "platinum",
                                             ].includes(col)
                                               ? (
                                                 <TextInput
