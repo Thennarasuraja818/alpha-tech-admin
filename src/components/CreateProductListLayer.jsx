@@ -132,22 +132,16 @@ const CreateProductListLayer = () => {
     const newSize = {
       sizeCode: "",
 
-      // NOMINAL (INCHES)
-      nominal_id_in: "",
-      nominal_od_in: "",
-      nominal_cs_in: "",
-
-      // STANDARD (INCHES)
-      standard_id_in: "",
-      standard_id_tolerance_in: "",
-      standard_cs_in: "",
-      standard_cs_tolerance_in: "",
-
-      // METRIC (mm)
       metric_id_mm: "",
       metric_id_tolerance_mm: "",
       metric_cs_mm: "",
-      metric_cs_tolerance_mm: ""
+      metric_cs_tolerance_mm: "",
+      sku: "",
+      stock: "",
+      // maxLimit: "",
+      weight: "",
+      customermrp: "",
+      price: ""
     };
     setSizes(prev => ({
       ...prev,
@@ -160,17 +154,15 @@ const CreateProductListLayer = () => {
     const newSize = {
       sizeCode: "",
 
-      // METRIC (mm)
       metric_id_mm: "",
       metric_id_tolerance_mm: "",
       metric_cs_mm: "",
       metric_cs_tolerance_mm: "",
-
-      // INCHES
-      inch_id_in: "",
-      inch_id_tolerance_in: "",
-      inch_cs_in: "",
-      inch_cs_tolerance_in: ""
+      sku: "",
+      stock: "",
+      weight: "",
+      customermrp: "",
+      price: ""
     };
     setSizes(prev => ({
       ...prev,
@@ -349,27 +341,36 @@ const CreateProductListLayer = () => {
         wholeSalerDiscunt: resp.wholesalerDiscount?.toString() || "",
         wholeSalerTax: resp.wholesalerTax?.toString() || "",
 
-        wholesalerAttribute: {
-          attributeId: resp.wholesalerAttribute?.attributeId || [],
-          rowData: resp.wholesalerAttribute?.rowData.map((row) => ({
-            ...row,
-            shippingWeight: row.shippingWeight || "",
-            wholesalermrp: row.wholesalermrp || "",
-            silver: row.silver || "",
-            gold: row.gold || "",
-            platinum: row.platinum || "",
-          })) || [],
-        },
+        // wholesalerAttribute: {
+        //   attributeId: resp.wholesalerAttribute?.attributeId || [],
+        //   rowData: resp.wholesalerAttribute?.rowData.map((row) => ({
+        //     ...row,
+        //     shippingWeight: row.shippingWeight || "",
+        //     wholesalermrp: row.wholesalermrp || "",
+        //     silver: row.silver || "",
+        //     gold: row.gold || "",
+        //     platinum: row.platinum || "",
+        //   })) || [],
+        // },
 
+        // customerAttribute: {
+        //   attributeId: resp.customerAttribute?.attributeId || [],
+        //   rowData:
+        //     resp.customerAttribute?.rowData.map((row) => ({
+        //       ...row,
+        //       shippingWeight: row.shippingWeight || "",
+        //       customermrp: row.customermrp || "",
+        //       price: row.price || "",
+        //     })) || [],
+        // },
+
+        wholesalerAttribute: {
+          attributeId: [],
+          rowData: [],
+        },
         customerAttribute: {
-          attributeId: resp.customerAttribute?.attributeId || [],
-          rowData:
-            resp.customerAttribute?.rowData.map((row) => ({
-              ...row,
-              shippingWeight: row.shippingWeight || "",
-              customermrp: row.customermrp || "",
-              price: row.price || "",
-            })) || [],
+          attributeId: [],
+          rowData: [],
         },
 
         metaTitle: resp.metaTitle || "",
@@ -390,17 +391,16 @@ const CreateProductListLayer = () => {
       setSizes({
         as_568a_standard: resp.as_568a_standard?.map(spec => ({
           sizeCode: spec.sizeCode || "",
-          nominal_id_in: spec.nominal_id_in || "",
-          nominal_od_in: spec.nominal_od_in || "",
-          nominal_cs_in: spec.nominal_cs_in || "",
-          standard_id_in: spec.standard_id_in || "",
-          standard_id_tolerance_in: spec.standard_id_tolerance_in || "",
-          standard_cs_in: spec.standard_cs_in || "",
-          standard_cs_tolerance_in: spec.standard_cs_tolerance_in || "",
           metric_id_mm: spec.metric_id_mm || "",
           metric_id_tolerance_mm: spec.metric_id_tolerance_mm || "",
           metric_cs_mm: spec.metric_cs_mm || "",
-          metric_cs_tolerance_mm: spec.metric_cs_tolerance_mm || ""
+          metric_cs_tolerance_mm: spec.metric_cs_tolerance_mm || "",
+          sku: spec.sku || "",
+          stock: spec.stock || "",
+          // maxLimit: spec.maxLimit || "",
+          weight: spec.weight || "",
+          customermrp: spec.customermrp || "",
+          price: spec.price || ""
         })) || [],
 
         jis_b_2401_standard: resp.jis_b_2401_standard?.map(spec => ({
@@ -409,10 +409,11 @@ const CreateProductListLayer = () => {
           metric_id_tolerance_mm: spec.metric_id_tolerance_mm || "",
           metric_cs_mm: spec.metric_cs_mm || "",
           metric_cs_tolerance_mm: spec.metric_cs_tolerance_mm || "",
-          inch_id_in: spec.inch_id_in || "",
-          inch_id_tolerance_in: spec.inch_id_tolerance_in || "",
-          inch_cs_in: spec.inch_cs_in || "",
-          inch_cs_tolerance_in: spec.inch_cs_tolerance_in || ""
+          sku: spec.sku || "",
+          stock: spec.stock || "",
+          weight: spec.weight || "",
+          customermrp: spec.customermrp || "",
+          price: spec.price || ""
         })) || []
       });
 
@@ -451,7 +452,7 @@ const CreateProductListLayer = () => {
     if (
       selector.isEdit &&
       attributeData.length > 0 &&
-      formData.customerAttribute.attributeId.length > 0
+      formData?.customerAttribute?.attributeId?.length > 0
     ) {
       generateTableDataCustomer();
     }
@@ -459,15 +460,15 @@ const CreateProductListLayer = () => {
     if (
       selector.isEdit &&
       attributeData.length > 0 &&
-      formData.wholesalerAttribute.attributeId.length > 0
+      formData?.wholesalerAttribute?.attributeId?.length > 0
     ) {
       generateTableData();
     }
   }, [
     attributeData,
-    formData.customerAttribute.attributeId,
+    formData?.customerAttribute?.attributeId,
     selector.isEdit,
-    formData.wholesalerAttribute.attributeId,
+    formData?.wholesalerAttribute?.attributeId,
   ]);
 
   const getAttributeOptions = (attributeName) => {
@@ -852,13 +853,13 @@ const CreateProductListLayer = () => {
     //     "Please select at least one wholesaler attribute";
     // }
 
-    if (
-      formData.isApplicableToCustomer &&
-      formData.customerAttribute.attributeId.length === 0
-    ) {
-      newErrors["customerAttribute"] =
-        "Please select at least one customer attribute";
-    }
+    // if (
+    //   formData.isApplicableToCustomer &&
+    //   formData.customerAttribute.attributeId.length === 0
+    // ) {
+    //   newErrors["customerAttribute"] =
+    //     "Please select at least one customer attribute";
+    // }
 
     // Product image validation
     if (!formData.productImage || formData.productImage.length === 0) {
@@ -892,45 +893,45 @@ const CreateProductListLayer = () => {
       }
     }
 
-    if (
-      formData.isApplicableToWholesaler &&
-      formData.wholesalerAttribute.rowData.length > 0
-    ) {
-      const wholesalerFields = [
-        { field: "sku", label: "SKU" },
-        { field: "stock", label: "Stock", isNum: true },
-        { field: "maxLimit", label: "Max Limit", isNum: true },
-        { field: "shippingWeight", label: "Shipping Weight", isNum: true },
-        { field: "wholesalermrp", label: "MRP", isNum: true },
-        { field: "silver", label: "Silver price", isNum: true },
-        { field: "gold", label: "Gold price", isNum: true },
-        { field: "platinum", label: "Platinum price", isNum: true },
-      ];
+    // if (
+    //   formData.isApplicableToWholesaler &&
+    //   formData.wholesalerAttribute.rowData.length > 0
+    // ) {
+    //   const wholesalerFields = [
+    //     { field: "sku", label: "SKU" },
+    //     { field: "stock", label: "Stock", isNum: true },
+    //     { field: "maxLimit", label: "Max Limit", isNum: true },
+    //     { field: "shippingWeight", label: "Shipping Weight", isNum: true },
+    //     { field: "wholesalermrp", label: "MRP", isNum: true },
+    //     { field: "silver", label: "Silver price", isNum: true },
+    //     { field: "gold", label: "Gold price", isNum: true },
+    //     { field: "platinum", label: "Platinum price", isNum: true },
+    //   ];
 
-      formData.wholesalerAttribute.rowData.forEach((row, rowIndex) => {
-        // Validate all fields
-        wholesalerFields.forEach(({ field, label, isNum }) => {
-          const value = row[field];
-          if (!value || value.toString().trim() === "") {
-            newErrors[`wholesaler_${field}_${rowIndex}`] = `${label} is required`;
-          } else if (isNum && isNaN(Number(value))) {
-            newErrors[`wholesaler_${field}_${rowIndex}`] = `${label} must be a number`;
-          } else if (isNum && Number(value) < 0) {
-            newErrors[`wholesaler_${field}_${rowIndex}`] = `${label} cannot be negative`;
-          }
-        });
+    //   formData.wholesalerAttribute.rowData.forEach((row, rowIndex) => {
+    //     // Validate all fields
+    //     wholesalerFields.forEach(({ field, label, isNum }) => {
+    //       const value = row[field];
+    //       if (!value || value.toString().trim() === "") {
+    //         newErrors[`wholesaler_${field}_${rowIndex}`] = `${label} is required`;
+    //       } else if (isNum && isNaN(Number(value))) {
+    //         newErrors[`wholesaler_${field}_${rowIndex}`] = `${label} must be a number`;
+    //       } else if (isNum && Number(value) < 0) {
+    //         newErrors[`wholesaler_${field}_${rowIndex}`] = `${label} cannot be negative`;
+    //       }
+    //     });
 
-        // Validate dynamic attribute columns
-        wholesalerDynamicColum.forEach((col) => {
-          if (!row[col] || row[col].toString().trim() === "") {
-            newErrors[`wholesaler_${col}_${rowIndex}`] = `${col} is required`;
-          }
-        });
-      });
-    } else if (formData.isApplicableToWholesaler) {
-      newErrors["wholesalerAttributeTable"] =
-        "Please generate and fill wholesaler attribute table";
-    }
+    //     // Validate dynamic attribute columns
+    //     wholesalerDynamicColum.forEach((col) => {
+    //       if (!row[col] || row[col].toString().trim() === "") {
+    //         newErrors[`wholesaler_${col}_${rowIndex}`] = `${col} is required`;
+    //       }
+    //     });
+    //   });
+    // } else if (formData.isApplicableToWholesaler) {
+    //   newErrors["wholesalerAttributeTable"] =
+    //     "Please generate and fill wholesaler attribute table";
+    // }
 
     // Customer attribute table validation
     if (
@@ -1136,14 +1137,14 @@ const CreateProductListLayer = () => {
           String(Number(formData.wholeSalerTax))
         );
 
-        formDataToSend.append(
-          "wholesalerAttribute",
-          JSON.stringify(formData.wholesalerAttribute)
-        );
-        formDataToSend.append(
-          "customerAttribute",
-          JSON.stringify(formData.customerAttribute)
-        );
+        // formDataToSend.append(
+        //   "wholesalerAttribute",
+        //   JSON.stringify(formData.wholesalerAttribute)
+        // );
+        // formDataToSend.append(
+        //   "customerAttribute",
+        //   JSON.stringify(formData.customerAttribute)
+        // );
 
         formDataToSend.append("metaTitle", formData.metaTitle);
         formDataToSend.append("metaKeyword", formData.metaKey);
@@ -1256,14 +1257,14 @@ const CreateProductListLayer = () => {
           String(Number(formData.wholeSalerTax))
         );
 
-        formDataToSend.append(
-          "wholesalerAttribute",
-          JSON.stringify(formData.wholesalerAttribute)
-        );
-        formDataToSend.append(
-          "customerAttribute",
-          JSON.stringify(formData.customerAttribute)
-        );
+        // formDataToSend.append(
+        //   "wholesalerAttribute",
+        //   JSON.stringify(formData.wholesalerAttribute)
+        // );
+        // formDataToSend.append(
+        //   "customerAttribute",
+        //   JSON.stringify(formData.customerAttribute)
+        // );
 
         formDataToSend.append("metaTitle", formData.metaTitle);
         formDataToSend.append("metaKeyword", formData.metaKey);
@@ -1913,23 +1914,16 @@ const CreateProductListLayer = () => {
                             <thead>
                               <tr>
                                 <th rowSpan="2" style={{ verticalAlign: 'middle' }}>AS 568A SIZE</th>
-                                <th colSpan="3" className="text-center">NOMINAL (REF.) MEASUREMENTS IN INCHES</th>
-                                <th colSpan="4" className="text-center">STANDARD MEASUREMENTS IN INCHES</th>
                                 <th colSpan="4" className="text-center">METRIC MEASUREMENTS IN MILLIMETERS</th>
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>SKU</th>
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Stock</th>
+                                {/* <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Max Limit</th> */}
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Weight</th>
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Customer MRP</th>
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Price</th>
                                 <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Action</th>
                               </tr>
                               <tr>
-                                {/* Nominal Inches Headers */}
-                                <th>ID</th>
-                                <th>OD</th>
-                                <th>CS</th>
-
-                                {/* Standard Inches Headers */}
-                                <th>ID</th>
-                                <th>±</th>
-                                <th>CS</th>
-                                <th>±</th>
-
                                 {/* Metric Headers */}
                                 <th>ID</th>
                                 <th>±</th>
@@ -1947,66 +1941,6 @@ const CreateProductListLayer = () => {
                                       value={size.sizeCode}
                                       onChange={(e) => handleSizeChange('as_568a_standard', index, 'sizeCode', e.target.value)}
                                       style={{ minWidth: '70px', fontSize: '11px' }}
-                                    />
-                                  </td>
-
-                                  {/* Nominal Inches (ID, OD, CS) */}
-                                  <td>
-                                    <TextInput
-                                      placeholder="1/32"
-                                      value={size.nominal_id_in}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'nominal_id_in', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="3/32"
-                                      value={size.nominal_od_in}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'nominal_od_in', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="1/32"
-                                      value={size.nominal_cs_in}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'nominal_cs_in', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td>
-
-                                  {/* Standard Inches (ID with tolerance) */}
-                                  <td>
-                                    <TextInput
-                                      placeholder="0.029"
-                                      value={size.standard_id_in}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'standard_id_in', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="0.004"
-                                      value={size.standard_id_tolerance_in}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'standard_id_tolerance_in', e.target.value)}
-                                      style={{ minWidth: '50px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="0.040"
-                                      value={size.standard_cs_in}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'standard_cs_in', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="0.003"
-                                      value={size.standard_cs_tolerance_in}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'standard_cs_tolerance_in', e.target.value)}
-                                      style={{ minWidth: '50px', fontSize: '11px' }}
                                     />
                                   </td>
 
@@ -2041,6 +1975,56 @@ const CreateProductListLayer = () => {
                                       value={size.metric_cs_tolerance_mm}
                                       onChange={(e) => handleSizeChange('as_568a_standard', index, 'metric_cs_tolerance_mm', e.target.value)}
                                       style={{ minWidth: '50px', fontSize: '11px' }}
+                                    />
+                                  </td>
+
+                                  {/* Additional Fields */}
+                                  <td>
+                                    <TextInput
+                                      placeholder="SKU"
+                                      value={size.sku}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'sku', e.target.value)}
+                                      style={{ minWidth: '80px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="Stock"
+                                      value={size.stock}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'stock', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  {/* <td>
+                                    <TextInput
+                                      placeholder="Max Limit"
+                                      value={size.maxLimit}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'maxLimit', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td> */}
+                                  <td>
+                                    <TextInput
+                                      placeholder="Weight"
+                                      value={size.weight}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'weight', e.target.value)}
+                                      style={{ minWidth: '60px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="Customer MRP"
+                                      value={size.customermrp}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'customermrp', e.target.value)}
+                                      style={{ minWidth: '80px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="Price"
+                                      value={size.price}
+                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'price', e.target.value)}
+                                      style={{ minWidth: '80px', fontSize: '11px' }}
                                     />
                                   </td>
 
@@ -2102,17 +2086,15 @@ const CreateProductListLayer = () => {
                               <tr>
                                 <th rowSpan="2" style={{ verticalAlign: 'middle' }}>JIS B 2401 SIZE</th>
                                 <th colSpan="4" className="text-center">MEASUREMENTS IN MILLIMETERS</th>
-                                <th colSpan="4" className="text-center">MEASUREMENTS IN INCHES</th>
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>SKU</th>
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Stock</th>
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Weight</th>
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Customer MRP</th>
+                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Price</th>
                                 <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Action</th>
                               </tr>
                               <tr>
                                 {/* Metric Headers */}
-                                <th>ID</th>
-                                <th>±</th>
-                                <th>CS</th>
-                                <th>±</th>
-
-                                {/* Inches Headers */}
                                 <th>ID</th>
                                 <th>±</th>
                                 <th>CS</th>
@@ -2166,37 +2148,44 @@ const CreateProductListLayer = () => {
                                     />
                                   </td>
 
-                                  {/* Inches (ID with tolerance) */}
                                   <td>
                                     <TextInput
-                                      placeholder="0.961"
-                                      value={size.inch_id_in}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'inch_id_in', e.target.value)}
+                                      placeholder="SKU"
+                                      value={size.sku}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'sku', e.target.value)}
+                                      style={{ minWidth: '80px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="Stock"
+                                      value={size.stock}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'stock', e.target.value)}
                                       style={{ minWidth: '60px', fontSize: '11px' }}
                                     />
                                   </td>
                                   <td>
                                     <TextInput
-                                      placeholder="0.010"
-                                      value={size.inch_id_tolerance_in}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'inch_id_tolerance_in', e.target.value)}
-                                      style={{ minWidth: '50px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="0.122"
-                                      value={size.inch_cs_in}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'inch_cs_in', e.target.value)}
+                                      placeholder="Weight"
+                                      value={size.weight}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'weight', e.target.value)}
                                       style={{ minWidth: '60px', fontSize: '11px' }}
                                     />
                                   </td>
                                   <td>
                                     <TextInput
-                                      placeholder="0.004"
-                                      value={size.inch_cs_tolerance_in}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'inch_cs_tolerance_in', e.target.value)}
-                                      style={{ minWidth: '50px', fontSize: '11px' }}
+                                      placeholder="Customer MRP"
+                                      value={size.customermrp}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'customermrp', e.target.value)}
+                                      style={{ minWidth: '80px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <TextInput
+                                      placeholder="Price"
+                                      value={size.price}
+                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'price', e.target.value)}
+                                      style={{ minWidth: '80px', fontSize: '11px' }}
                                     />
                                   </td>
 
@@ -2240,7 +2229,7 @@ const CreateProductListLayer = () => {
                       </p>
                       <p className="mb-0">
                         <i className="mdi mdi-information-outline me-1"></i>
-                        <strong>JIS B 2401:</strong> G-series (static seal), P-series (dynamic seal) - Both metric and inches
+                        <strong>JIS B 2401:</strong> G-series (static seal), P-series (dynamic seal) - Metric measurements
                       </p>
                     </div>
                   </div>
@@ -2248,7 +2237,7 @@ const CreateProductListLayer = () => {
               </div>
 
               {/* Attributes Section */}
-              <div className="card mb-4">
+              {/* <div className="card mb-4">
                 <div className="p-4">
                   <div
                     className="d-flex align-items-center"
@@ -2280,206 +2269,6 @@ const CreateProductListLayer = () => {
                 </div>
                 {isAttributesOpen && (
                   <div className="p-4 border-top">
-                    {/* <h5 className="font-size-18 mb-4">Wholesaler Attribute</h5>
-                    <form>
-                      <div className="row">
-                        <div>
-                          <MultiSelect
-                            label="Select Attributes"
-                            placeholder="Pick one or more"
-                            data={attributeData.map((attr) => ({
-                              value: attr._id,
-                              label: attr.name,
-                            }))}
-                            value={formData.wholesalerAttribute.attributeId}
-                            onChange={(selected) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                wholesalerAttribute: {
-                                  ...prev.wholesalerAttribute,
-                                  attributeId: selected,
-                                },
-                              }))
-                            }
-                            searchable
-                            nothingFound="No options"
-                          />
-                          {errors.wholesalerAttribute && (
-                            <p className="text-danger">
-                              {errors.wholesalerAttribute}
-                            </p>
-                          )}
-
-                          <Button mt="md" onClick={generateTableData}>
-                            Generate Table
-                          </Button>
-
-                          {formData.wholesalerAttribute.rowData.length > 0 && (
-                            <table className="table mt-4">
-                              <thead>
-                                <tr>
-                                  {columns.map((col, idx) => (
-                                    <th key={idx}>{formatHeaderName(col)}</th>
-                                  ))}
-                                  <th>Action</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {formData.wholesalerAttribute.rowData.map(
-                                  (row, rowIndex) => (
-                                    <React.Fragment key={rowIndex}>
-                                      <tr>
-                                        {columns.map((col) => (
-                                          <td key={col}>
-                                            {[
-                                              "sku",
-                                              "stock",
-                                              "maxLimit",
-                                              "shippingWeight",
-                                              "wholesalermrp",
-                                              "silver",
-                                              "gold",
-                                              "platinum",
-                                            ].includes(col) ? (
-                                              <TextInput
-                                                value={row[col] || ""}
-                                                onChange={(e) =>
-                                                  handleRowChange(
-                                                    rowIndex,
-                                                    col,
-                                                    e.target.value
-                                                  )
-                                                }
-                                                error={
-                                                  !!errors[
-                                                  `wholesaler_${col}_${rowIndex}`
-                                                  ]
-                                                }
-                                              />
-                                            ) : (
-                                              <Select
-                                                data={getAttributeOptions(col)}
-                                                value={row[col]}
-                                                onChange={(value) =>
-                                                  handleRowChange(
-                                                    rowIndex,
-                                                    col,
-                                                    value
-                                                  )
-                                                }
-                                                searchable
-                                                error={
-                                                  !!errors[
-                                                  `wholesaler_${col}_${rowIndex}`
-                                                  ]
-                                                }
-                                              />
-                                            )}
-                                          </td>
-                                        ))}
-                                        <td>
-                                          <ActionIcon
-                                            onClick={handleAddRow}
-                                            color="green"
-                                            title="Add Row"
-                                          >
-                                            <IconPlus />
-                                          </ActionIcon>
-                                          <ActionIcon
-                                            onClick={() =>
-                                              handleRemoveRow(rowIndex)
-                                            }
-                                            color="red"
-                                            title="Remove Row"
-                                            ml="md"
-                                          >
-                                            <IconTrash />
-                                          </ActionIcon>
-                                        </td>
-                                      </tr>
-
-                                      {Object.keys(errors).some(
-                                        (key) =>
-                                          key.includes(`wholesaler_`) &&
-                                          key.endsWith(`_${rowIndex}`)
-                                      ) && (
-                                          <tr>
-                                            <td colSpan={columns.length + 1}>
-                                              {Object.keys(errors).map((key) => {
-                                                if (
-                                                  key.startsWith(
-                                                    `wholesaler_`
-                                                  ) &&
-                                                  key.endsWith(`_${rowIndex}`)
-                                                ) {
-                                                  return (
-                                                    <p
-                                                      key={key}
-                                                      className="text-danger"
-                                                      size="sm"
-                                                      style={{ display: "block" }}
-                                                    >
-                                                      {errors[key]}
-                                                    </p>
-                                                  );
-                                                }
-                                                return null;
-                                              })}
-                                              {errors[rowIndex] && (
-                                                <p
-                                                  size="sm"
-                                                  className="text-danger"
-                                                >
-                                                  {errors[rowIndex]}
-                                                </p>
-                                              )}
-                                            </td>
-                                          </tr>
-                                        )}
-                                    </React.Fragment>
-                                  )
-                                )}
-                              </tbody>
-                            </table>
-                          )}
-
-                          <div className="row mt-3">
-                            <div className="col-lg-6 mb-3">
-                              <label className="form-label">
-                                Discount (if applicable)
-                              </label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                name="wholeSalerDiscunt"
-                                value={formData.wholeSalerDiscunt}
-                                onChange={handleChange}
-                              />
-                            </div>
-                            <div className="col-lg-6 mb-3">
-                              <label className="form-label">Tax %</label>
-                              <select
-                                className="form-control"
-                                name="wholeSalerTax"
-                                value={formData.wholeSalerTax}
-                                onChange={handleChange}
-                                style={{ width: "99.5%" }}
-                              >
-                                <option value="">Select</option>
-                                {taxes
-                                  .filter((tax) => tax.isActive)
-                                  .map((tax) => (
-                                    <option key={tax._id} value={tax.taxRate}>
-                                      {tax.taxName}
-                                    </option>
-                                  ))}
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </form> */}
-
                     <h5 className="font-size-18 mt-5 mb-4">
                       Customer Attribute
                     </h5>
@@ -2539,9 +2328,6 @@ const CreateProductListLayer = () => {
                                               "shippingWeight",
                                               "customermrp",
                                               "price",
-                                              // "silver",
-                                              // "gold",
-                                              // "platinum",
                                             ].includes(col)
                                               ? (
                                                 <TextInput
@@ -2594,7 +2380,6 @@ const CreateProductListLayer = () => {
                                       </tr>
                                       <tr>
                                         <td colSpan={columnsCustomer.length + 1}>
-                                          {/* Display all errors for this row */}
                                           {Object.keys(errors).map((key) => {
                                             if (
                                               key.startsWith(`customer_`) &&
@@ -2667,7 +2452,7 @@ const CreateProductListLayer = () => {
                     </form>
                   </div>
                 )}
-              </div>
+              </div> */}
 
               {/* Meta Tags Section */}
               <div className="card mb-4">
@@ -2954,7 +2739,7 @@ const CreateProductListLayer = () => {
         <div className='modal-footer mt-3'>
           <button
 
-            type='ffff'
+            type='button'
             onClick={() => handleClose()}
 
             className='form-wizard-next-btn btn btn-secondary me-1 px-32'
@@ -2963,7 +2748,7 @@ const CreateProductListLayer = () => {
           </button>
           <button
 
-            type='ffff'
+            type='submit'
             className='form-wizard-next-btn btn btn-primary px-32'
             onClick={handleSubmit}
           >
