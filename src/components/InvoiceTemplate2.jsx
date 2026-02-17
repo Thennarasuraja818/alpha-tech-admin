@@ -271,7 +271,7 @@ const InvoiceTemplate = ({ orderData, InvoiceData }) => {
           {/* Left: Company Logo */}
           <div style={{ width: "25%", textAlign: "left" }}>
             <img
-              src="/assets/images/logo/ramesh-traders-logo-invoice.jpg"
+              src="/assets/images/logo/Alpha-1.png"
               alt="Company Logo"
               style={{
                 height: "70px",
@@ -664,54 +664,54 @@ const InvoiceTemplate = ({ orderData, InvoiceData }) => {
                     {Object.keys(taxGroups).filter(
                       (rate) => parseFloat(rate) > 0
                     ).length === 0 && (
-                      <tr>
-                        <td
-                          style={{
-                            ...tdStyle,
-                            textAlign: "center",
-                            padding: "2px",
-                          }}
-                        >
-                          0%
-                        </td>
-                        <td
-                          style={{
-                            ...tdStyle,
-                            textAlign: "right",
-                            padding: "2px",
-                          }}
-                        >
-                          ₹{formatCurrency(subTotal)}
-                        </td>
-                        <td
-                          style={{
-                            ...tdStyle,
-                            textAlign: "right",
-                            padding: "2px",
-                          }}
-                        >
-                          ₹0.00
-                        </td>
-                        <td
-                          style={{
-                            ...tdStyle,
-                            textAlign: "right",
-                            padding: "2px",
-                          }}
-                        >
-                          ₹0.00
-                        </td>
-                        <td
-                          style={{
-                            ...tdStyle,
-                            textAlign: "right",
-                            padding: "2px",
-                          }}
-                        >
-                          ₹0.00
-                        </td>
-                      </tr>
-                    )}
+                        <tr>
+                          <td
+                            style={{
+                              ...tdStyle,
+                              textAlign: "center",
+                              padding: "2px",
+                            }}
+                          >
+                            0%
+                          </td>
+                          <td
+                            style={{
+                              ...tdStyle,
+                              textAlign: "right",
+                              padding: "2px",
+                            }}
+                          >
+                            ₹{formatCurrency(subTotal)}
+                          </td>
+                          <td
+                            style={{
+                              ...tdStyle,
+                              textAlign: "right",
+                              padding: "2px",
+                            }}
+                          >
+                            ₹0.00
+                          </td>
+                          <td
+                            style={{
+                              ...tdStyle,
+                              textAlign: "right",
+                              padding: "2px",
+                            }}
+                          >
+                            ₹0.00
+                          </td>
+                          <td
+                            style={{
+                              ...tdStyle,
+                              textAlign: "right",
+                              padding: "2px",
+                            }}
+                          >
+                            ₹0.00
+                          </td>
+                        </tr>
+                      )}
                   </tbody>
                 </table>
               </div>

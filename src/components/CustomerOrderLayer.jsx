@@ -261,26 +261,26 @@ function CustomerOrderLayer() {
                                   <td>{order.amount}</td>
                                   <td>{order.type}</td>
                                   <td>
-                                  <div className="dropdown" style={{cursor: "pointer"}}>
-                      <Icon
-                        icon="entypo:dots-three-vertical"
-                        className="menu-icon"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      />
-                      <div className="dropdown-menu">
-                        <Link
-                          to={`/order-invoice-details-customer/${order._id}`}
-                          className="dropdown-item"
-                        >
-                          View
-                        </Link>
-                        <a className="dropdown-item" onClick={() => handleDownload(order._id)}
-                          disabled={isDownloading}>
-                          {isDownloading ? "Downloading..." : "Download Invoice"}
-                        </a>
-                      </div>
-                    </div>
+                                    <div className="dropdown" style={{ cursor: "pointer" }}>
+                                      <Icon
+                                        icon="entypo:dots-three-vertical"
+                                        className="menu-icon"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false"
+                                      />
+                                      <div className="dropdown-menu">
+                                        <Link
+                                          to={`/order-invoice-details-customer/${order._id}`}
+                                          className="dropdown-item"
+                                        >
+                                          View
+                                        </Link>
+                                        <a className="dropdown-item" onClick={() => handleDownload(order._id)}
+                                          disabled={isDownloading}>
+                                          {isDownloading ? "Downloading..." : "Download Invoice"}
+                                        </a>
+                                      </div>
+                                    </div>
                                   </td>
                                 </tr>
                               ))}
