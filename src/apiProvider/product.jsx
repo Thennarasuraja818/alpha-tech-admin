@@ -34,7 +34,7 @@ class productApi {
 
   async productList(input) {
     const params = {
-      page: input.page || 0, 
+      page: input.page || 0,
       limit: input.limit || 100,
       search: input.search || "",
     };
@@ -104,11 +104,65 @@ class productApi {
     }
   }
 
-    async getProductStockList(input) {
+  async getProductOrderList(input) {
+    try {
+      const response = await apiClient.get('/report/product-orders', { params: input })
+
+      if (response.status == 200 || response.status == 201) {
+        return {
+          response: response.data,
+          status: true
+        }
+      } else {
+        return {
+          status: false
+        }
+      }
+    } catch (error) {
+      return {
+        response: null,
+        status: false
+      }
+    }
+  }
+
+
+
+  async getCustomerList(input) {
     const params = {
       page: input.page || 0,  // Changed default to 1 as most APIs expect page numbering to start at 1
       limit: input.limit || 100,
-      stockType:input.stockType || "cureent-stock"
+    };
+    try {
+      const response = await apiClient.get('/customers', {
+        params
+      })
+
+      if (response.status == 200 || response.status == 201) {
+        return {
+          response: response.data,
+          status: true
+        }
+      } else {
+        //ShowNotifications.showAlertNotification('Some thing went wrong', true)
+        return {
+          status: false
+        }
+      }
+    } catch (error) {
+      // ShowNotifications.showAxiosErrorAlert(error)
+      return {
+        response: null,
+        status: false
+      }
+    }
+  }
+
+  async getProductStockList(input) {
+    const params = {
+      page: input.page || 0,  // Changed default to 1 as most APIs expect page numbering to start at 1
+      limit: input.limit || 100,
+      stockType: input.stockType || "cureent-stock"
     };
 
     console.log(params, "params")
