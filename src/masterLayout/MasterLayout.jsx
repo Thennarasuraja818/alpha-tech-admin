@@ -289,6 +289,11 @@ const MasterLayout = ({ children }) => {
   // Tax
   const canViewTaxList = usePermission("taxList", "view");
   const canViewTax = canViewTaxList;
+
+  // Reports
+  const canViewProductReport = usePermission("productReport", "view");
+  const canViewReports = canViewProductReport;
+
   return (
     <section className={mobileMenu ? "overlay active" : "overlay "}>
       {/* sidebar */}
@@ -1560,6 +1565,30 @@ const MasterLayout = ({ children }) => {
                         }
                       >
                         Tax List
+                      </NavLink>
+                    </li>
+                  )}
+                </ul>
+              </li>
+            )}
+
+            {/* Reports */}
+            {canViewReports && (
+              <li className="dropdown">
+                <Link to="#">
+                  <Icon icon="mdi:chart-bar" className="menu-icon" />
+                  <span>Reports</span>
+                </Link>
+                <ul className="sidebar-submenu">
+                  {canViewProductReport && (
+                    <li>
+                      <NavLink
+                        to="/product-report"
+                        className={(navData) =>
+                          navData.isActive ? "active-page" : ""
+                        }
+                      >
+                        Product Report
                       </NavLink>
                     </li>
                   )}

@@ -174,6 +174,8 @@ import RetailerInvoiceDetailPage from "./pages/RetailerInvoiceDetailPage";
 import CrmOrderPage from "./pages/CrmOrderPage";
 import CrmorderListPage from "./pages/CrmOrderListPage";
 import CrmListPage from "./pages/CrmUserListPage";
+import ProductReportPage from "./pages/ProductReportPage";
+
 
 
 function App() {
@@ -523,6 +525,8 @@ function App() {
         {/* Website content */}
 
         <Route exact path="/home-page" element={<HomeBannerpage />} />
+        <Route exact path="/product-report" element={<ProductReportPage />} />
+
 
         {/* Default redirect to dashboard */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
