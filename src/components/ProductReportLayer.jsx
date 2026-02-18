@@ -262,18 +262,21 @@ const ProductReportLayer = () => {
                 </div>
 
                 {/* Report Table */}
-                <div className="table-responsive scroll-sm border-0 radius-12 shadow-sm overflow-hidden">
-                    <table className="table mb-0">
-                        <thead>
-                            <tr style={{ backgroundColor: primaryColor }}>
-                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0">Date</th>
-                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0">Order ID</th>
-                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0">Customer Name</th>
-                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0">Product Name</th>
-                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0">Variant Name</th>
-                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0">Quantity</th>
-                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0 text-end">Unit Price</th>
-                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0 text-end">Total Price</th>
+                <div
+                    className="table-responsive scroll-sm border-0 radius-12 shadow-sm"
+                    style={{ maxHeight: '600px', overflowY: 'auto', overflowX: 'auto' }}
+                >
+                    <table className="table mb-0" style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%', minWidth: '1000px' }}>
+                        <thead className="position-sticky top-0" style={{ zIndex: 10 }}>
+                            <tr>
+                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0" style={{ backgroundColor: primaryColor, position: 'sticky', top: 0 }}>Date</th>
+                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0" style={{ backgroundColor: primaryColor, position: 'sticky', top: 0 }}>Order ID</th>
+                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0" style={{ backgroundColor: primaryColor, position: 'sticky', top: 0 }}>Customer Name</th>
+                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0" style={{ backgroundColor: primaryColor, position: 'sticky', top: 0 }}>Product Name</th>
+                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0" style={{ backgroundColor: primaryColor, position: 'sticky', top: 0 }}>Variant Name</th>
+                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0" style={{ backgroundColor: primaryColor, position: 'sticky', top: 0 }}>Quantity</th>
+                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0 text-end" style={{ backgroundColor: primaryColor, position: 'sticky', top: 0 }}>Unit Price</th>
+                                <th scope="col" className="text-white fw-bold py-20 px-24 border-0 text-end" style={{ backgroundColor: primaryColor, position: 'sticky', top: 0 }}>Total Price</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white">
