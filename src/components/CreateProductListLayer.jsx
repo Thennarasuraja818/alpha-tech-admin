@@ -8,328 +8,285 @@ import subCategory from "../apiProvider/subcategoryapi";
 import childCategory from "../apiProvider/childcategoryapi";
 import BrandApi from "../apiProvider/brand";
 import Attribute from "../apiProvider/attribute";
-import {
-  MultiSelect,
-  Select,
-  TextInput,
-  Button,
-  ActionIcon,
-  Text,
-} from "@mantine/core";
-import { IconPlus, IconTrash } from "@tabler/icons-react";
+import { Button, ActionIcon, TextInput, Modal, Badge, Group, Stack, Text, ScrollArea, Loader, Tooltip } from "@mantine/core";
+import { IconPlus, IconTrash, IconColumns, IconSearch, IconX, IconCheck } from "@tabler/icons-react";
 import vendorApi from "../apiProvider/vendor";
 import productApi from "../apiProvider/product";
-import { useSelector } from "react-redux";
+import variantApis from "../apiProvider/variant";
+import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import { handleFormProduct } from "../redux/slices/product";
 import { IMAGE_BASE_URL } from "../network/apiClient";
 import "react-toastify/dist/ReactToastify.css";
-import { toast } from "react-toastify";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+// These always appear — cannot be removed by admin
+const COMMON_COLUMNS = [
+  { key: "sku", label: "SKU", type: "text", placeholder: "SKU-001" },
+  { key: "stock", label: "Stock", type: "number", placeholder: "0" },
+  { key: "price", label: "Price", type: "number", placeholder: "0.00" },
+];
+
+
+const ORING_CATEGORY_NAME = "o-rings";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const buildEmptyRow = (extraColumns) => {
+  const row = {};
+  extraColumns.forEach((col) => { row[col.key] = ""; });
+  COMMON_COLUMNS.forEach((col) => { row[col.key] = ""; });
+  return row;
+};
 
 const CreateProductListLayer = () => {
   const dispatch = useDispatch();
-
-  const [isMetaTagsOpen, setIsMetaTagsOpen] = useState(false);
-  const [isAttributesOpen, setIsAttributesOpen] = useState(false);
-  const [isDeliveryOptionOpen, setIsDeliveryOptionOpen] = useState(false);
-  const [imageOpen, setImageOpen] = useState(false);
-
-  const [isExpanded, setIsExpanded] = useState(true);
-
-  const [errors, setErrors] = useState({});
-  const selector = useSelector((state) => state.product);
-  const [columnsCustomer, setColumnsCustomer] = useState([]);
-  const [cutomerDynamicColum, setCustomerDynamicColum] = useState([]);
-
-  const [columns, setColumns] = useState([]);
-  const [wholesalerDynamicColum, setwholesalerDynamicColum] = useState([]);
-
-  const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
+  const selector = useSelector((state) => state.product);
+
+  // ── Section toggles
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [isTechnicalSpecsOpen, setIsTechnicalSpecsOpen] = useState(false);
+  const [isVariantOpen, setIsVariantOpen] = useState(false);
+  const [isMetaTagsOpen, setIsMetaTagsOpen] = useState(false);
+  const [imageOpen, setImageOpen] = useState(false);
+  const [showColumnPicker, setShowColumnPicker] = useState(false);
+  const [variantSearch, setVariantSearch] = useState("");
+  const [isCreatingVariant, setIsCreatingVariant] = useState(false);
+
+  // ── State
+  const [errors, setErrors] = useState({});
+  const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setLoading] = useState(false);
-  const [initialData] = useState({
-    category: "",
-    subCategory: "",
-    childCategory: "",
-    brand: "",
-    productName: "",
-    productImage: [],
-    additionalImages: [],
-    shortDescription: "",
-    slug: "",
-    lowStockAlert: false,
-    tagsLabel: "Select",
-    refundable: "Yes",
-    productStatus: "active",
-    description: "",
-    hsn: "",
-    customerDiscunt: "",
-    customerTax: "",
+  const [taxes, setTaxes] = useState([]);
 
-    wholeSalerDiscunt: "",
-    wholeSalerTax: "",
-
-    wholesalerAttribute: {
-      attributeId: [],
-      rowData: [],
-    },
-    customerAttribute: {
-      attributeId: [],
-      rowData: [],
-    },
-
-    metaTitle: "",
-    metaKey: "",
-    metaDescription: "",
-
-    selectDeliveryOption: "",
-
-    vendorNameSelect: "",
-
-    isApplicableToCustomer: false,
-    isApplicableToWholesaler: false,
-    lowStockQuantity: 0,
-    quantityPerPack: 0,
-    packingType: "",
-    // isIncentive: false,
-    // showToLineman: false,
-  });
-  const [formData, setFormData] = useState(initialData);
+  // ── Dropdown data
   const [categoryData, setCategories] = useState([]);
   const [subCategoryData, setSubCategory] = useState([]);
   const [childCategoryData, setchldCategory] = useState([]);
   const [brandData, setBrand] = useState([]);
   const [attributeData, setAttribute] = useState([]);
   const [vendorData, setVendor] = useState([]);
+  const [availableExtraColumns, setAvailableExtraColumns] = useState([]);
 
+  // ── O-ring sizes
   const [sizes, setSizes] = useState({
-    as_568a_standard: [],  // AS 568A sizes
-    jis_b_2401_standard: []  // JIS B 2401 sizes
+    as_568a_standard: [],
+    jis_b_2401_standard: [],
   });
-  const [isTechnicalSpecsOpen, setIsTechnicalSpecsOpen] = useState(false);
 
-  const [taxes, setTaxes] = useState([]);
+  // ── Variant table
+  // selectedExtraColumns = columns admin chose from AVAILABLE_EXTRA_COLUMNS
+  const [selectedExtraColumns, setSelectedExtraColumns] = useState([]);
+  const [variantRows, setVariantRows] = useState([]);
+
+  // Full column list = selected extra + common (always appended at end)
+  const fullColumnList = [...selectedExtraColumns, ...COMMON_COLUMNS];
+
+  // ── Form data
+  const [formData, setFormData] = useState({
+    category: "", subCategory: "", childCategory: "", brand: "",
+    productName: "", productImage: [], additionalImages: [],
+    shortDescription: "", slug: "", lowStockAlert: false,
+    tagsLabel: "Select", refundable: "Yes", productStatus: "active",
+    description: "", hsn: "",
+    customerDiscunt: "", customerTax: "",
+    wholeSalerDiscunt: "", wholeSalerTax: "",
+    wholesalerAttribute: { attributeId: [], rowData: [] },
+    customerAttribute: { attributeId: [], rowData: [] },
+    metaTitle: "", metaKey: "", metaDescription: "",
+    selectDeliveryOption: "", vendorNameSelect: "",
+    isApplicableToCustomer: false, isApplicableToWholesaler: false,
+    lowStockQuantity: 0, quantityPerPack: 0, packingType: "",
+  });
+
+  // Derived
+  const isOringCategory = categoryData
+    .find((c) => c._id === formData.category)
+    ?.name?.toLowerCase() === ORING_CATEGORY_NAME;
+
+  // Columns not yet added (available to pick)
+  const unselectedColumns = availableExtraColumns.filter(
+    (col) => !selectedExtraColumns.find((s) => s.key === col.key)
+  );
+
+  // ─── Initial load ──────────────────────────────────────────────────────────
   useEffect(() => {
-    fetchData();
+    const init = async () => {
+      try {
+        await Promise.all([
+          categoryDtls(), brandsDtls(), attributeDtls(), vendorDtls(), fetchTaxes(), fetchVariants(),
+          selector.isEdit ? setUpdatedData() : Promise.resolve(),
+        ]);
+        if (selector.isEdit) setIsEditing(true);
+      } catch (e) { console.error(e); }
+    };
+    init();
   }, []);
-  const fetchData = async () => {
-    const productResult = await productApi.getTax();
 
-    if (productResult.status) {
-      setTaxes(productResult.response.data);
-    }
+  const fetchVariants = async () => {
+    try {
+      const res = await variantApis.variantList({ page: 0, limit: 1000 });
+      if (res.status) {
+        const dynamicCols = res.response.data.map(v => ({
+          key: v.name.toLowerCase().replace(/\s+/g, "_"),
+          label: v.name,
+        }));
+        setAvailableExtraColumns(dynamicCols);
+        return dynamicCols;
+      }
+    } catch (e) { console.error("Error fetching variants:", e); }
+    return [];
   };
+
+  const fetchTaxes = async () => {
+    const res = await productApi.getTax();
+    if (res.status) setTaxes(res.response.data);
+  };
+
+  // ─── Cascading dropdowns ───────────────────────────────────────────────────
   const categoryDtls = async () => {
-    const response = await catetgoryProvider.getCategory();
-
-    if (response) {
-      setCategories(response?.data?.data?.items);
-    }
+    const res = await catetgoryProvider.getCategory();
+    if (res) setCategories(res?.data?.data?.items);
   };
-
-  const handleAddAS568ASize = () => {
-    const newSize = {
-      sizeCode: "",
-
-      metric_id_mm: "",
-      metric_id_tolerance_mm: "",
-      metric_cs_mm: "",
-      metric_cs_tolerance_mm: "",
-      sku: "",
-      stock: "",
-      // maxLimit: "",
-      weight: "",
-      customermrp: "",
-      price: ""
-    };
-    setSizes(prev => ({
-      ...prev,
-      as_568a_standard: [...prev.as_568a_standard, newSize]
-    }));
-  };
-
-  // Function to add JIS B 2401 size row
-  const handleAddJISSize = () => {
-    const newSize = {
-      sizeCode: "",
-
-      metric_id_mm: "",
-      metric_id_tolerance_mm: "",
-      metric_cs_mm: "",
-      metric_cs_tolerance_mm: "",
-      sku: "",
-      stock: "",
-      weight: "",
-      customermrp: "",
-      price: ""
-    };
-    setSizes(prev => ({
-      ...prev,
-      jis_b_2401_standard: [...prev.jis_b_2401_standard, newSize]
-    }));
-  };
-
-  // Function to handle size input changes
-  const handleSizeChange = (standard, index, field, value) => {
-    const updatedSizes = { ...sizes };
-    updatedSizes[standard][index][field] = value;
-    setSizes(updatedSizes);
-  };
-
-  // Function to remove a size row
-  const handleRemoveSize = (standard, index) => {
-    const updatedSizes = { ...sizes };
-    updatedSizes[standard] = updatedSizes[standard].filter((_, i) => i !== index);
-    setSizes(updatedSizes);
-  };
-
-
-  useEffect(() => {
-    const slug = formData.productName
-      ?.toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9\-]/g, "")
-      .replace(/\-+/g, "-")
-      .replace(/^-+|-+$/g, "");
-
-    setFormData((prev) => ({ ...prev, slug }));
-  }, [formData.productName]);
 
   useEffect(() => {
     subCategoryDtls();
-  }, [formData?.category]);
+  }, [formData.category]);
   const subCategoryDtls = async () => {
-    if (!formData?.category) {
-      setSubCategory([]);
-      return;
-    }
-
+    if (!formData.category) { setSubCategory([]); return; }
     setLoading(true);
     try {
-      const input = {
-        categoryId: formData.category,
-        limit: 100,
-        page: 0,
-      };
-      const response = await subCategory.getSubCategorys(input);
-
-      if (response?.status) {
-        setSubCategory(response.response?.data?.data?.items || []);
-      }
-    } catch (error) {
-      console.error("Error fetching subcategories:", error);
-    } finally {
-      setLoading(false);
-    }
+      const res = await subCategory.getSubCategorys({ categoryId: formData.category, limit: 100, page: 0 });
+      if (res?.status) setSubCategory(res.response?.data?.data?.items || []);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
   };
-  useEffect(() => {
-    if (formData?.subCategory) {
-      childCategoryDtls(formData?.subCategory);
-    }
 
-  }, [formData?.subCategory]);
-  const childCategoryDtls = async (subCategoryId) => {
+  useEffect(() => {
+    if (formData.subCategory) {
+      childCategoryDtls(formData.subCategory);
+    }
+  }, [formData.subCategory]);
+  const childCategoryDtls = async (id) => {
     try {
-      console.log("Child Category API Input:", subCategoryId);
-      const response = await childCategory.getChildCategoryBysubCategoryId(subCategoryId);
-      console.log("Child Category API Response:", response);
-      if (response?.status) {
-        const items = response.response?.data || [];
-        setchldCategory(items);
+      const res = await childCategory.getChildCategoryBysubCategoryId(id);
+      if (res?.status) setchldCategory(res.response?.data || []);
+    } catch { setchldCategory([]); }
+  };
+
+  const brandsDtls = async () => { const r = await BrandApi.brandList({ type: "all", page: 0, limit: 100 }); if (r?.status) setBrand(r.response.data); };
+  const attributeDtls = async () => { const r = await Attribute.attributeList({ type: "all" }); if (r?.status) setAttribute(r.response.data); };
+  const vendorDtls = async () => { const r = await vendorApi.vendorList({ type: "all" }); if (r?.status) setVendor(r.response.data); };
+
+  // ─── Column picker ─────────────────────────────────────────────────────────
+
+  const handleAddExtraColumn = (col) => {
+    setSelectedExtraColumns((prev) => [...prev, col]);
+    setVariantRows((prev) => prev.map((row) => ({ ...row, [col.key]: "" })));
+    setShowColumnPicker(false);
+    setVariantSearch("");
+  };
+
+  const handleCreateNewVariant = async () => {
+    if (!variantSearch.trim()) return;
+    try {
+      setIsCreatingVariant(true);
+      const res = await variantApis.variantCreate({ name: variantSearch.trim() });
+      if (res.status) {
+        const dynamicCols = await fetchVariants();
+        const newCol = dynamicCols.find(c => c.label.toLowerCase() === variantSearch.trim().toLowerCase());
+        if (newCol) {
+          handleAddExtraColumn(newCol);
+          setShowColumnPicker(false);
+          setVariantSearch("");
+        }
       }
-    } catch (error) {
-      console.error("Error in childCategoryDtls:", error);
-      setchldCategory([]);
+    } catch (e) {
+      console.error("Error creating variant:", e);
+    } finally {
+      setIsCreatingVariant(false);
     }
   };
+
+  const handleRemoveExtraColumn = (colKey) => {
+    setSelectedExtraColumns((prev) => prev.filter((c) => c.key !== colKey));
+    // Remove key from all rows
+    setVariantRows((prev) =>
+      prev.map((row) => { const r = { ...row }; delete r[colKey]; return r; })
+    );
+  };
+
+  // ─── Variant row handlers ──────────────────────────────────────────────────
+  const handleAddVariantRow = () => {
+    setVariantRows((prev) => [...prev, buildEmptyRow(selectedExtraColumns)]);
+    if (!isVariantOpen) setIsVariantOpen(true);
+  };
+
+  const handleVariantRowChange = (index, key, value) => {
+    setVariantRows((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [key]: value };
+      return updated;
+    });
+  };
+
+  const handleRemoveVariantRow = (index) => {
+    setVariantRows((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // ─── O-ring size handlers ──────────────────────────────────────────────────
+  const blankOringRow = () => ({
+    sizeCode: "", metric_id_mm: "", metric_id_tolerance_mm: "",
+    metric_cs_mm: "", metric_cs_tolerance_mm: "",
+    sku: "", stock: "", weight: "", customermrp: "", price: "",
+  });
+
+  const handleAddAS568ASize = () => setSizes((p) => ({ ...p, as_568a_standard: [...p.as_568a_standard, blankOringRow()] }));
+  const handleAddJISSize = () => setSizes((p) => ({ ...p, jis_b_2401_standard: [...p.jis_b_2401_standard, blankOringRow()] }));
+
+  const handleSizeChange = (standard, index, field, value) => {
+    setSizes((prev) => {
+      const copy = { ...prev, [standard]: [...prev[standard]] };
+      copy[standard][index] = { ...copy[standard][index], [field]: value };
+      return copy;
+    });
+  };
+
+  const handleRemoveSize = (standard, index) =>
+    setSizes((prev) => ({ ...prev, [standard]: prev[standard].filter((_, i) => i !== index) }));
+
+  // ─── Slug auto-generate ────────────────────────────────────────────────────
   useEffect(() => {
-    brandsDtls();
-  }, [formData?.brandsDtls]);
-  const brandsDtls = async () => {
-    const input = {
-      type: "all",
-      page: 0,
-      limit: 100,
-    };
-    const response = await BrandApi.brandList(input);
+    const slug = formData.productName
+      ?.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+    setFormData((prev) => ({ ...prev, slug }));
+  }, [formData.productName]);
 
-    if (response?.status) {
-      setBrand(response.response.data);
-    }
-  };
-
-  const attributeDtls = async () => {
-    const input = {
-      type: "all",
-    };
-    const response = await Attribute.attributeList(input);
-
-    if (response?.status) {
-      setAttribute(response.response.data);
-    }
-  };
-
-  const vendorDtls = async () => {
-    const input = {
-      type: "all",
-    };
-    const response = await vendorApi.vendorList(input);
-
-    if (response?.status) {
-      setVendor(response.response.data);
-    }
-  };
-
-  const getImageUrl = (img) =>
-    `${IMAGE_BASE_URL}/${img.docPath}/${img.docName}`;
-  const urlToFile = async (url, fileName, mimeType) => {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    return new File([blob], fileName, { type: mimeType });
+  // ─── Edit mode ─────────────────────────────────────────────────────────────
+  const urlToFile = async (url, name, mime) => {
+    const res = await fetch(url); const blob = await res.blob();
+    return new File([blob], name, { type: mime });
   };
 
   const setUpdatedData = async () => {
     setLoading(true);
-
     const response = await productApi.productDetails(selector.id);
-
     if (response.status) {
       const resp = response.response.data;
-
-      const existingImages = await Promise.all(
-        (resp.productImage || []).map(async (img) => {
-          const url = `${IMAGE_BASE_URL}/${img.docPath}/${img.docName}`;
-          return await urlToFile(
-            url,
-            img.originalName || img.docName,
-            "image/png"
-          );
-        })
-      );
-
-      const additinalImag = await Promise.all(
-        (resp.additionalImage || []).map(async (img) => {
-          const url = `${IMAGE_BASE_URL}/${img.docPath}/${img.docName}`;
-          return await urlToFile(
-            url,
-            img.originalName || img.docName,
-            "image/png"
-          );
-        })
-      );
+      const existingImages = await Promise.all((resp.productImage || []).map((img) => urlToFile(`${IMAGE_BASE_URL}/${img.docPath}/${img.docName}`, img.originalName || img.docName, "image/png")));
+      const additionalImgs = await Promise.all((resp.additionalImage || []).map((img) => urlToFile(`${IMAGE_BASE_URL}/${img.docPath}/${img.docName}`, img.originalName || img.docName, "image/png")));
 
       setFormData({
-        category: resp.categoryId || "",
-        subCategory: resp.subCategory || "",
-        childCategory: resp.childCategory || "",
-        brand: resp.brand || "",
-        productName: resp.productName || "",
-        hsn: resp.hsn || "",
-        productImage: existingImages || [],
-        additionalImages: additinalImag || [],
-        shortDescription: resp.shortDescription || "",
-        slug: resp.slug || "",
+        category: resp.categoryId || "", subCategory: resp.subCategory || "",
+        childCategory: resp.childCategory || "", brand: resp.brand || "",
+        productName: resp.productName || "", hsn: resp.hsn || "",
+        productImage: existingImages, additionalImages: additionalImgs,
+        shortDescription: resp.shortDescription || "", slug: resp.slug || "",
         lowStockAlert: resp.lowStockAlert || false,
         tagsLabel: resp.tagAndLabel || "Select",
         refundable: resp.refundable ? "Yes" : "No",
@@ -340,1017 +297,156 @@ const CreateProductListLayer = () => {
         customerTax: resp.customerTax?.toString() || "",
         wholeSalerDiscunt: resp.wholesalerDiscount?.toString() || "",
         wholeSalerTax: resp.wholesalerTax?.toString() || "",
-
-        // wholesalerAttribute: {
-        //   attributeId: resp.wholesalerAttribute?.attributeId || [],
-        //   rowData: resp.wholesalerAttribute?.rowData.map((row) => ({
-        //     ...row,
-        //     shippingWeight: row.shippingWeight || "",
-        //     wholesalermrp: row.wholesalermrp || "",
-        //     silver: row.silver || "",
-        //     gold: row.gold || "",
-        //     platinum: row.platinum || "",
-        //   })) || [],
-        // },
-
-        // customerAttribute: {
-        //   attributeId: resp.customerAttribute?.attributeId || [],
-        //   rowData:
-        //     resp.customerAttribute?.rowData.map((row) => ({
-        //       ...row,
-        //       shippingWeight: row.shippingWeight || "",
-        //       customermrp: row.customermrp || "",
-        //       price: row.price || "",
-        //     })) || [],
-        // },
-
-        wholesalerAttribute: {
-          attributeId: [],
-          rowData: [],
-        },
-        customerAttribute: {
-          attributeId: [],
-          rowData: [],
-        },
-
-        metaTitle: resp.metaTitle || "",
-        metaKey: resp.metaKeyword || "",
+        wholesalerAttribute: { attributeId: [], rowData: [] },
+        customerAttribute: { attributeId: [], rowData: [] },
+        metaTitle: resp.metaTitle || "", metaKey: resp.metaKeyword || "",
         metaDescription: resp.metaDesc || "",
-
         selectDeliveryOption: resp.delivery || "",
         vendorNameSelect: resp.vendorId || "",
-
         isApplicableToCustomer: resp.applicableForCustomer || false,
         isApplicableToWholesaler: resp.applicableForWholesale || false,
         quantityPerPack: resp.quantityPerPack || 0,
         packingType: resp.packingType || "",
-        // isIncentive: resp.isIncentive || false,
-        // showToLineman: resp.showToLineman || false,
       });
 
       setSizes({
-        as_568a_standard: resp.as_568a_standard?.map(spec => ({
-          sizeCode: spec.sizeCode || "",
-          metric_id_mm: spec.metric_id_mm || "",
-          metric_id_tolerance_mm: spec.metric_id_tolerance_mm || "",
-          metric_cs_mm: spec.metric_cs_mm || "",
-          metric_cs_tolerance_mm: spec.metric_cs_tolerance_mm || "",
-          sku: spec.sku || "",
-          stock: spec.stock || "",
-          // maxLimit: spec.maxLimit || "",
-          weight: spec.weight || "",
-          customermrp: spec.customermrp || "",
-          price: spec.price || ""
-        })) || [],
-
-        jis_b_2401_standard: resp.jis_b_2401_standard?.map(spec => ({
-          sizeCode: spec.sizeCode || "",
-          metric_id_mm: spec.metric_id_mm || "",
-          metric_id_tolerance_mm: spec.metric_id_tolerance_mm || "",
-          metric_cs_mm: spec.metric_cs_mm || "",
-          metric_cs_tolerance_mm: spec.metric_cs_tolerance_mm || "",
-          sku: spec.sku || "",
-          stock: spec.stock || "",
-          weight: spec.weight || "",
-          customermrp: spec.customermrp || "",
-          price: spec.price || ""
-        })) || []
+        as_568a_standard: (resp.as_568a_standard || []).map((s) => ({ ...blankOringRow(), ...s })),
+        jis_b_2401_standard: (resp.jis_b_2401_standard || []).map((s) => ({ ...blankOringRow(), ...s })),
       });
-
-      // Open the technical specifications section if there's data
-      if (resp.as_568a_standard?.length > 0 || resp.jis_b_2401_standard?.length > 0) {
+      if (resp.as_568a_standard?.length > 0 || resp.jis_b_2401_standard?.length > 0)
         setIsTechnicalSpecsOpen(true);
-      }
 
+      // Detect which extra columns were saved
+      const savedRows = resp.customerAttribute?.rowData || [];
+      if (savedRows.length > 0) {
+        const firstRow = savedRows[0];
+        // We wait for variants to be loaded before detection or use the freshly fetched ones
+        let currentAvailable = availableExtraColumns;
+        if (!currentAvailable.length) {
+          currentAvailable = await fetchVariants();
+        }
+        const detected = currentAvailable.filter((col) => col.key in firstRow);
+        setSelectedExtraColumns(detected);
+        setVariantRows(savedRows);
+        setIsVariantOpen(true);
+      }
     }
     setLoading(false);
   };
 
-  useEffect(() => {
-    const fetchAllData = async () => {
-      try {
-        await Promise.all([
-          categoryDtls(),
-          brandsDtls(),
-          attributeDtls(),
-          vendorDtls(),
-          selector.isEdit ? setUpdatedData() : Promise.resolve(),
-        ]);
-
-        if (selector.isEdit) {
-          setIsEditing(true);
-        }
-      } catch (error) {
-        console.error("Error while fetching initial data:", error);
-      }
-    };
-
-    fetchAllData();
-  }, []);
-
-  useEffect(() => {
-    if (
-      selector.isEdit &&
-      attributeData.length > 0 &&
-      formData?.customerAttribute?.attributeId?.length > 0
-    ) {
-      generateTableDataCustomer();
-    }
-
-    if (
-      selector.isEdit &&
-      attributeData.length > 0 &&
-      formData?.wholesalerAttribute?.attributeId?.length > 0
-    ) {
-      generateTableData();
-    }
-  }, [
-    attributeData,
-    formData?.customerAttribute?.attributeId,
-    selector.isEdit,
-    formData?.wholesalerAttribute?.attributeId,
-  ]);
-
-  const getAttributeOptions = (attributeName) => {
-    const attr = attributeData.find((a) => a.name === attributeName);
-    return attr?.value.map((v) => ({ value: v._id, label: v.value })) || [];
-  };
-
-  const cartesian = (arrays) =>
-    arrays.reduce(
-      (acc, curr) =>
-        acc.flatMap((a) => curr.map((b) => ({ ...a, ...b }))),
-      [{}]
-    );
-
-  const generateAttributeTable = (
-    attributeKey,
-    setDynamicColum,
-    setColumns,
-    defaultRow,
-    staticCols
-  ) => {
-    const selectedAttributes = formData[attributeKey].attributeId
-      .map((id) =>
-        attributeData.find((attr) => attr._id.toString() === id.toString())
-      )
-      .filter(Boolean);
-
-    const attributeValues = selectedAttributes.map((attr) =>
-      attr.value.map((v) => ({ [attr.name]: v._id }))
-    );
-
-    const combinations = cartesian(attributeValues);
-
-    const shouldPreserve =
-      attributeKey === "wholesalerAttribute"
-        ? formData.wholesalerAttribute.rowData.length > 0 && selector.isEdit
-        : formData.customerAttribute.rowData.length > 0;
-
-    const tableRows = shouldPreserve
-      ? formData[attributeKey].rowData
-      : combinations.slice(0, 1).map((combo) => ({
-        ...combo,
-        ...defaultRow,
-      }));
-
-    const dynamicNames = selectedAttributes.map((a) => a.name);
-    setDynamicColum(dynamicNames);
-    setColumns([...dynamicNames, ...staticCols]);
-
-    setFormData((prev) => ({
-      ...prev,
-      [attributeKey]: {
-        ...prev[attributeKey],
-        rowData: tableRows,
-      },
-    }));
-  };
-
-  const generateTableData = () => {
-    generateAttributeTable(
-      "wholesalerAttribute",
-      setwholesalerDynamicColum,
-      setColumns,
-      {
-        sku: "",
-        stock: "",
-        maxLimit: "",
-        shippingWeight: "",
-        wholesalermrp: "",
-        silver: "",
-        gold: "",
-        platinum: "",
-      },
-      [
-        "sku",
-        "stock",
-        "maxLimit",
-        "shippingWeight",
-        "wholesalermrp",
-        "silver",
-        "gold",
-        "platinum",
-      ]
-    );
-  };
-
-  const handleRowChange = (rowIndex, key, value) => {
-    const updated = [...formData.wholesalerAttribute.rowData];
-    updated[rowIndex][key] = value;
-
-    const rowAttrs = wholesalerDynamicColum
-      .map((k) => {
-        return updated[rowIndex][k];
-      })
-      .join("_");
-
-    let hasConflict = false;
-
-    for (let i = 0; i < updated.length; i++) {
-      if (i !== rowIndex) {
-        const compareAttrs = wholesalerDynamicColum
-          .map((k) => updated[i][k])
-          .join("_");
-
-        if (
-          rowAttrs === compareAttrs &&
-          updated[i]["sku"] !== updated[rowIndex]["sku"]
-        ) {
-          hasConflict = true;
-          break;
-        }
-      }
-    }
-
-    if (hasConflict) {
-      setErrors((prev) => ({
-        ...prev,
-        [rowIndex]: `Duplicate combination with different SKU found.`,
-      }));
-    } else {
-      setErrors((prev) => {
-        const updatedErrors = { ...prev };
-        delete updatedErrors[rowIndex];
-        return updatedErrors;
-      });
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      wholesalerAttribute: {
-        ...prev.wholesalerAttribute,
-        rowData: updated,
-      },
-    }));
-  };
-
-  const handleAddRow = () => {
-    const newRow = {
-      sku: "",
-      stock: "",
-      maxLimit: "",
-      shippingWeight: "",
-      wholesalermrp: "",
-      silver: "",
-      gold: "",
-      platinum: "",
-    };
-
-    setFormData((prev) => ({
-      ...prev,
-      wholesalerAttribute: {
-        ...prev.wholesalerAttribute,
-        rowData: [...prev.wholesalerAttribute.rowData, newRow],
-      },
-    }));
-  };
-
-  const handleRemoveRow = (rowIndex) => {
-    const updatedRows = formData.wholesalerAttribute.rowData.filter(
-      (_, index) => index !== rowIndex
-    );
-    setFormData((prev) => ({
-      ...prev,
-      wholesalerAttribute: {
-        ...prev.wholesalerAttribute,
-        rowData: updatedRows,
-      },
-    }));
-  };
-
-  const getAttributeOptionsCustomer = (attributeName) => {
-    const attr = attributeData.find((a) => a.name === attributeName);
-    return attr?.value.map((v) => ({ value: v._id, label: v.value })) || [];
-  };
-
-  const generateTableDataCustomer = () => {
-    generateAttributeTable(
-      "customerAttribute",
-      setCustomerDynamicColum,
-      setColumnsCustomer,
-      {
-        sku: "",
-        stock: "",
-        maxLimit: "",
-        shippingWeight: "",
-        customermrp: "",
-        price: "",
-        // silver: "",
-        // gold: "",
-        // platinum: "",
-      },
-
-      [
-        "sku",
-        "stock",
-        "maxLimit",
-        "shippingWeight",
-        "customermrp",
-        "price",
-        // "silver",
-        // "gold",
-        // "platinum",
-      ]
-    );
-  };
-
-  const handleRowChangeCustomer = (rowIndex, key, value) => {
-    const updated = [...formData.customerAttribute.rowData];
-    updated[rowIndex][key] = value;
-
-    const rowAttrs = cutomerDynamicColum
-      .map((k) => {
-        return updated[rowIndex][k];
-      })
-      .join("_");
-
-    let hasConflict = false;
-
-    for (let i = 0; i < updated.length; i++) {
-      if (i !== rowIndex) {
-        const compareAttrs = cutomerDynamicColum
-          .map((k) => updated[i][k])
-          .join("_");
-
-        if (
-          rowAttrs === compareAttrs &&
-          updated[i]["sku"] !== updated[rowIndex]["sku"]
-        ) {
-          hasConflict = true;
-          break;
-        }
-      }
-    }
-
-    if (hasConflict) {
-      setErrors((prev) => ({
-        ...prev,
-        [rowIndex]: `Duplicate combination with different SKU found.`,
-      }));
-    } else {
-      setErrors((prev) => {
-        const updatedErrors = { ...prev };
-        delete updatedErrors[rowIndex];
-        return updatedErrors;
-      });
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      customerAttribute: {
-        ...prev.customerAttribute,
-        rowData: updated,
-      },
-    }));
-  };
-
-  const handleAddRowCustomer = () => {
-    const newRow = {
-      sku: "",
-      stock: "",
-      maxLimit: "",
-      shippingWeight: "",
-      customermrp: "",
-      price: "",
-      // silver: "",
-      // gold: "",
-      // platinum: "",
-    };
-
-
-    setFormData((prev) => ({
-      ...prev,
-      customerAttribute: {
-        ...prev.customerAttribute,
-        rowData: [...prev.customerAttribute.rowData, newRow],
-      },
-    }));
-  };
-
-  const handleRemoveRowCustomer = (rowIndex) => {
-    const updatedRows = formData.customerAttribute.rowData.filter(
-      (_, index) => index !== rowIndex
-    );
-    setFormData((prev) => ({
-      ...prev,
-      customerAttribute: {
-        ...prev.customerAttribute,
-        rowData: updatedRows,
-      },
-    }));
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleChangeCheckBox = (e) => {
-    const { name, value, type, checked } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+  // ─── Form handlers ─────────────────────────────────────────────────────────
+  const handleChange = (e) => { const { name, value } = e.target; setFormData((p) => ({ ...p, [name]: value })); };
+  const handleChangeCheckBox = (e) => { const { name, value, type, checked } = e.target; setFormData((p) => ({ ...p, [name]: type === "checkbox" ? checked : value })); };
+  const handleEditorChange = (_, editor) => setFormData((p) => ({ ...p, description: editor.getData() }));
+  const handleDeleteImage = (i) => setFormData((p) => ({ ...p, productImage: p.productImage.filter((_, idx) => idx !== i) }));
+  const handleDeleteAdditionalImage = (i) => setFormData((p) => ({ ...p, additionalImages: p.additionalImages.filter((_, idx) => idx !== i) }));
 
   const handleFileChange = (e, key) => {
-    const files = Array.from(e.target.files);
-    const allowedTypes = ["image/jpeg", "image/png"];
-
-    const validFiles = files.filter((file) => {
-      if (!allowedTypes.includes(file.type)) {
-        alert(`File ${file.name} is not a valid JPG or PNG image.`);
-        return false;
-      }
-      return true;
-    });
-
-    if (validFiles.length === 0) return;
-
-    setFormData((prev) => ({
-      ...prev,
-      [key]:
-        key === "productImage"
-          ? [validFiles[0]]
-          : [...(prev[key] || []), ...validFiles],
-    }));
+    const files = Array.from(e.target.files); const allowed = ["image/jpeg", "image/png"];
+    const valid = files.filter((f) => { if (!allowed.includes(f.type)) { alert(`${f.name} is not valid JPG/PNG`); return false; } return true; });
+    if (!valid.length) return;
+    setFormData((p) => ({ ...p, [key]: key === "productImage" ? [valid[0]] : [...(p[key] || []), ...valid] }));
   };
 
-  const handleEditorChange = (event, editor) => {
-    const data = editor.getData();
-
-    setFormData((prev) => ({
-      ...prev,
-      description: data,
-    }));
-  };
-
+  // ─── Validation ────────────────────────────────────────────────────────────
   const Validate = () => {
     const newErrors = {};
+    const req = (val, key, msg) => { if (!val || (typeof val === "string" && !val.trim()) || (Array.isArray(val) && !val.length)) newErrors[key] = msg; };
+    req(formData.category, "category", "Category is Required");
+    req(formData.subCategory, "subCategory", "Sub Category is Required");
+    req(formData.childCategory, "childCategory", "Child Category is Required");
+    req(formData.brand, "brand", "Brand is Required");
+    req(formData.productName, "productName", "Product Name is Required");
+    req(formData.slug, "slug", "Slug is Required");
+    req(formData.packingType, "packingType", "Packing Type is Required");
+    if (!formData.productImage?.length) newErrors.productImage = "At least one product image is required";
+    if (!formData.hsn) newErrors.hsn = "HSN code is required";
+    else if (!/^\d+$/.test(formData.hsn)) newErrors.hsn = "HSN code must be numeric";
+    else if (![4, 6, 8].includes(formData.hsn.length)) newErrors.hsn = "HSN code must be 4, 6, or 8 digits";
+    if (!formData.quantityPerPack) newErrors.quantityPerPack = "Quantity Per Pack is Required";
+    else if (Number(formData.quantityPerPack) <= 0) newErrors.quantityPerPack = "Quantity must be > 0";
 
-    const checkRequired = (val, key, msg) => {
-      if (
-        !val ||
-        (typeof val === "string" && !val.trim()) ||
-        (Array.isArray(val) && val.length === 0)
-      ) {
-        newErrors[key] = msg;
-      }
-    };
-
-
-    // Basic validations
-    checkRequired(formData.category, "category", "Category is Required");
-    checkRequired(
-      formData.subCategory,
-      "subCategory",
-      "Sub Category is Required"
-    );
-    checkRequired(
-      formData.childCategory,
-      "childCategory",
-      "Child Category is Required"
-    );
-    checkRequired(formData.brand, "brand", "Brand is Required");
-    checkRequired(
-      formData.productName,
-      "productName",
-      "Product Name is Required"
-    );
-    checkRequired(formData.slug, "slug", "Slug is Required");
-
-    // Check if at least one attribute is selected
-    // if (
-    //   formData.isApplicableToWholesaler &&
-    //   formData.wholesalerAttribute.attributeId.length === 0
-    // ) {
-    //   newErrors["wholesalerAttribute"] =
-    //     "Please select at least one wholesaler attribute";
-    // }
-
-    // if (
-    //   formData.isApplicableToCustomer &&
-    //   formData.customerAttribute.attributeId.length === 0
-    // ) {
-    //   newErrors["customerAttribute"] =
-    //     "Please select at least one customer attribute";
-    // }
-
-    // Product image validation
-    if (!formData.productImage || formData.productImage.length === 0) {
-      newErrors["productImage"] = "At least one product image is required";
-    }
-
-    // HSN validation
-    if (!formData.hsn) {
-      newErrors.hsn = "HSN code is required";
-    } else if (!/^\d+$/.test(formData.hsn)) {
-      newErrors.hsn = "HSN code must be numeric";
-    } else if (![4, 6, 8].includes(formData.hsn.length)) {
-      newErrors.hsn = "HSN code must be 4, 6, or 8 digits";
-    }
-
-    // Packing info validation
-    checkRequired(
-      formData.packingType,
-      "packingType",
-      "Packing Type is Required"
-    );
-
-    if (!formData.quantityPerPack) {
-      newErrors.quantityPerPack = "Quantity Per Pack is Required";
-    } else {
-      const qty = Number(formData.quantityPerPack);
-      if (isNaN(qty)) {
-        newErrors.quantityPerPack = "Quantity must be a number";
-      } else if (qty <= 0) {
-        newErrors.quantityPerPack = "Quantity must be greater than 0";
-      }
-    }
-
-    // if (
-    //   formData.isApplicableToWholesaler &&
-    //   formData.wholesalerAttribute.rowData.length > 0
-    // ) {
-    //   const wholesalerFields = [
-    //     { field: "sku", label: "SKU" },
-    //     { field: "stock", label: "Stock", isNum: true },
-    //     { field: "maxLimit", label: "Max Limit", isNum: true },
-    //     { field: "shippingWeight", label: "Shipping Weight", isNum: true },
-    //     { field: "wholesalermrp", label: "MRP", isNum: true },
-    //     { field: "silver", label: "Silver price", isNum: true },
-    //     { field: "gold", label: "Gold price", isNum: true },
-    //     { field: "platinum", label: "Platinum price", isNum: true },
-    //   ];
-
-    //   formData.wholesalerAttribute.rowData.forEach((row, rowIndex) => {
-    //     // Validate all fields
-    //     wholesalerFields.forEach(({ field, label, isNum }) => {
-    //       const value = row[field];
-    //       if (!value || value.toString().trim() === "") {
-    //         newErrors[`wholesaler_${field}_${rowIndex}`] = `${label} is required`;
-    //       } else if (isNum && isNaN(Number(value))) {
-    //         newErrors[`wholesaler_${field}_${rowIndex}`] = `${label} must be a number`;
-    //       } else if (isNum && Number(value) < 0) {
-    //         newErrors[`wholesaler_${field}_${rowIndex}`] = `${label} cannot be negative`;
-    //       }
-    //     });
-
-    //     // Validate dynamic attribute columns
-    //     wholesalerDynamicColum.forEach((col) => {
-    //       if (!row[col] || row[col].toString().trim() === "") {
-    //         newErrors[`wholesaler_${col}_${rowIndex}`] = `${col} is required`;
-    //       }
-    //     });
-    //   });
-    // } else if (formData.isApplicableToWholesaler) {
-    //   newErrors["wholesalerAttributeTable"] =
-    //     "Please generate and fill wholesaler attribute table";
-    // }
-
-    // Customer attribute table validation
-    if (
-      formData.isApplicableToCustomer &&
-      formData.customerAttribute.rowData.length > 0
-    ) {
-      const customerFields = [
-        { field: "sku", label: "SKU" },
-        { field: "stock", label: "Stock", isNum: true },
-        { field: "maxLimit", label: "Max Limit", isNum: true },
-        { field: "shippingWeight", label: "Shipping Weight", isNum: true },
-        { field: "customermrp", label: "Customer MRP", isNum: true },
-        { field: "price", label: "Price", isNum: true },
-        // { field: "silver", label: "Silver price", isNum: true },
-        // { field: "gold", label: "Gold price", isNum: true },
-        // { field: "platinum", label: "Platinum price", isNum: true },
-
-      ];
-
-      formData.customerAttribute.rowData.forEach((row, rowIndex) => {
-        // Validate all fields
-        customerFields.forEach(({ field, label, isNum }) => {
-          const value = row[field];
-          if (!value || value.toString().trim() === "") {
-            newErrors[`customer_${field}_${rowIndex}`] = `${label} is required`;
-          } else if (isNum && isNaN(Number(value))) {
-            newErrors[`customer_${field}_${rowIndex}`] = `${label} must be a number`;
-          } else if (isNum && Number(value) < 0) {
-            newErrors[`customer_${field}_${rowIndex}`] = `${label} cannot be negative`;
-          }
-        });
-
-        // Specific MRP check
-        if (
-          row.customermrp &&
-          row.price &&
-          Number(row.customermrp) <= Number(row.price)
-        ) {
-          newErrors[`customer_mrp_${rowIndex}`] = `Customer MRP must be greater than Price`;
-        }
-
-        // Validate dynamic attribute columns
-        cutomerDynamicColum.forEach((col) => {
-          if (!row[col] || row[col].toString().trim() === "") {
-            newErrors[`customer_${col}_${rowIndex}`] = `${col} is required`;
-          }
+    if (!isOringCategory && variantRows.length > 0) {
+      variantRows.forEach((row, i) => {
+        fullColumnList.forEach(({ key, label, type }) => {
+          const val = row[key];
+          if (!val || val.toString().trim() === "") newErrors[`v_${key}_${i}`] = `${label} is required`;
+          else if (type === "number" && isNaN(Number(val))) newErrors[`v_${key}_${i}`] = `${label} must be a number`;
+          else if (type === "number" && Number(val) < 0) newErrors[`v_${key}_${i}`] = `${label} cannot be negative`;
         });
       });
     }
-    // else if (formData.isApplicableToCustomer) {
-    //   newErrors["customerAttributeTable"] =
-    //     "Please generate and fill customer attribute table";
-    // }
-
-    console.log("Validation errors:", newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleClose = () => {
-    dispatch(
-      handleFormProduct({
-        view: false,
-        isEdit: false,
-        id: "",
-      })
-    );
-    setFormData({
-      category: "",
-      subCategory: "",
-      childCategory: "",
-      brand: "",
-      productName: "",
-      productImage: [],
-      additionalImages: [],
-      shortDescription: "",
-      slug: "",
-      hsn: "",
-      lowStockAlert: false,
-      tagsLabel: "Select",
-      refundable: "Yes",
-      productStatus: "Active",
-      description: "",
-      customerDiscunt: "",
-      customerTax: "",
-
-      wholeSalerDiscunt: "",
-      wholeSalerTax: "",
-
-      quantityPerPack: 0,
-      packingType: "",
-
-      wholesalerAttribute: {
-        attributeId: [],
-        rowData: [],
-      },
-      customerAttribute: {
-        attributeId: [],
-        rowData: [],
-      },
-
-      metaTitle: "",
-      metaKey: "",
-      metaDescription: "",
-
-      selectDeliveryOption: "",
-
-      vendorNameSelect: "",
-
-      isApplicableToCustomer: false,
-      isApplicableToWholesaler: false,
-      lowStockQuantity: 0,
-    });
-    // Reset technical specifications
-    setSizes({
-      as_568a_standard: [],
-      jis_b_2401_standard: []
-    });
-
-    // Reset technical specs section state
-    setIsTechnicalSpecsOpen(false);
-
-    setTimeout(() => {
-      navigate("/product");
-    }, 1000);
+  // ─── Submit ────────────────────────────────────────────────────────────────
+  const buildFormData = () => {
+    const fd = new FormData();
+    fd.append("categoryId", formData.category); fd.append("subCategory", formData.subCategory);
+    fd.append("childCategory", formData.childCategory); fd.append("productName", formData.productName);
+    fd.append("brand", formData.brand); fd.append("shortDescription", formData.shortDescription);
+    fd.append("slug", formData.slug); fd.append("hsn", formData.hsn);
+    fd.append("lowStockAlert", String(formData.lowStockAlert === true));
+    fd.append("tagAndLabel", formData.tagsLabel);
+    fd.append("refundable", String(formData.refundable === "Yes" || formData.refundable === true));
+    fd.append("productStatus", String(formData.productStatus === "active"));
+    fd.append("description", formData.description);
+    fd.append("applicableForCustomer", String(formData.isApplicableToCustomer === true));
+    fd.append("customerDiscount", String(Number(formData.customerDiscunt)));
+    fd.append("customerTax", String(Number(formData.customerTax)));
+    fd.append("applicableForWholesale", String(formData.isApplicableToWholesaler === true));
+    fd.append("wholesalerDiscount", String(Number(formData.wholeSalerDiscunt)));
+    fd.append("wholesalerTax", String(Number(formData.wholeSalerTax)));
+    fd.append("metaTitle", formData.metaTitle); fd.append("metaKeyword", formData.metaKey);
+    fd.append("metaDesc", formData.metaDescription); fd.append("delivery", formData.selectDeliveryOption);
+    fd.append("lowStockQuantity", formData.lowStockQuantity); fd.append("quantityPerPack", formData.quantityPerPack);
+    fd.append("packingType", formData.packingType);
+    (formData.productImage || []).forEach((img) => { if (img instanceof File) fd.append("productImage", img); });
+    (formData.additionalImages || []).forEach((img) => { fd.append("additionalImages", img); });
+    if (isOringCategory) {
+      if (sizes.as_568a_standard.length > 0) fd.append("as_568a_standard", JSON.stringify(sizes.as_568a_standard));
+      if (sizes.jis_b_2401_standard.length > 0) fd.append("jis_b_2401_standard", JSON.stringify(sizes.jis_b_2401_standard));
+    } else if (variantRows.length > 0) {
+      fd.append("customerAttribute", JSON.stringify({ attributeId: [], rowData: variantRows }));
+    }
+    return fd;
   };
 
   const handleSubmit = async (e) => {
-    console.log("Submitting form data:", formData);
     e.preventDefault();
-    console.log("Validating form data...");
-    const isvalidated = Validate();
-    console.log("isvalidated", isvalidated);
-    if (isvalidated) {
-      console.log("Validation passed");
-      if (!isEditing) {
-        const formDataToSend = new FormData();
-
-        formDataToSend.append("categoryId", formData.category);
-        formDataToSend.append("subCategory", formData.subCategory);
-        formDataToSend.append("childCategory", formData.childCategory);
-        formDataToSend.append("productName", formData.productName);
-        formDataToSend.append("brand", formData.brand);
-        formDataToSend.append("shortDescription", formData.shortDescription);
-        formDataToSend.append("slug", formData.slug);
-        formDataToSend.append("hsn", formData.hsn);
-
-        if (formData.productImage) {
-          formData.productImage.forEach((img) => {
-            formDataToSend.append("productImage", img);
-          });
-        }
-
-        if (
-          formData.additionalImages &&
-          Array.isArray(formData.additionalImages)
-        ) {
-          formData.additionalImages.forEach((img) => {
-            formDataToSend.append("additionalImages", img);
-          });
-        }
-
-        formDataToSend.append(
-          "lowStockAlert",
-          String(formData.lowStockAlert === true)
-        );
-        formDataToSend.append("tagAndLabel", formData.tagsLabel);
-        formDataToSend.append(
-          "refundable",
-          String(formData.refundable === "Yes" || formData.refundable === true)
-        );
-        formDataToSend.append(
-          "productStatus",
-          String(formData.productStatus === "active")
-        );
-        formDataToSend.append("description", formData.description);
-
-        formDataToSend.append(
-          "applicableForCustomer",
-          String(formData.isApplicableToCustomer === true)
-        );
-
-        formDataToSend.append(
-          "customerDiscount",
-          String(Number(formData.customerDiscunt))
-        );
-        formDataToSend.append(
-          "customerTax",
-          String(Number(formData.customerTax))
-        );
-
-        formDataToSend.append(
-          "applicableForWholesale",
-          String(formData.isApplicableToWholesaler === true)
-        );
-
-        formDataToSend.append(
-          "wholesalerDiscount",
-          String(Number(formData.wholeSalerDiscunt))
-        );
-        formDataToSend.append(
-          "wholesalerTax",
-          String(Number(formData.wholeSalerTax))
-        );
-
-        // formDataToSend.append(
-        //   "wholesalerAttribute",
-        //   JSON.stringify(formData.wholesalerAttribute)
-        // );
-        // formDataToSend.append(
-        //   "customerAttribute",
-        //   JSON.stringify(formData.customerAttribute)
-        // );
-
-        formDataToSend.append("metaTitle", formData.metaTitle);
-        formDataToSend.append("metaKeyword", formData.metaKey);
-        formDataToSend.append("metaDesc", formData.metaDescription);
-
-        formDataToSend.append("delivery", formData.selectDeliveryOption);
-        formDataToSend.append("lowStockQuantity", formData.lowStockQuantity);
-        formDataToSend.append("quantityPerPack", formData.quantityPerPack);
-        formDataToSend.append("packingType", formData.packingType);
-        // formDataToSend.append("isIncentive", formData.isIncentive === true);
-        // formDataToSend.append(
-        //   "showToLineman",
-        //   formData.showToLineman === true
-        // );
-        // Send sizes separately to match backend schema
-        if (sizes.as_568a_standard.length > 0) {
-          formDataToSend.append("as_568a_standard", JSON.stringify(sizes.as_568a_standard));
-        }
-        if (sizes.jis_b_2401_standard.length > 0) {
-          formDataToSend.append("jis_b_2401_standard", JSON.stringify(sizes.jis_b_2401_standard));
-        }
-        // Debug FormData contents
-        console.log("=== FormData Contents ===");
-        for (let [key, value] of formDataToSend.entries()) {
-          if (value instanceof File) {
-            console.log(key, ":", value.name, `(${value.type})`);
-          } else {
-            console.log(key, ":", value);
-          }
-        }
-        console.log("========================");
-
-        const response = await productApi.productcreate(formDataToSend);
-        console.log("response", response);
-        if (response.status) {
-          setTimeout(() => {
-            handleClose();
-          }, 2000);
-        }
+    if (!Validate()) return;
+    const fd = buildFormData();
+    console.log("=== FormData Contents ===");
+    for (let [key, value] of fd.entries()) {
+      if (value instanceof File) {
+        console.log(key, ":", value.name, `(${value.type})`);
+      } else {
+        console.log(key, ":", value);
       }
+    }
+    console.log("========================");
 
-      if (isEditing) {
-        const formDataToSend = new FormData();
-        formDataToSend.append("categoryId", formData.category);
-        formDataToSend.append("subCategory", formData.subCategory);
-        formDataToSend.append("childCategory", formData.childCategory);
-        formDataToSend.append("productName", formData.productName);
-        formDataToSend.append("brand", formData.brand);
-        formDataToSend.append("shortDescription", formData.shortDescription);
-        formDataToSend.append("slug", formData.slug);
-        formDataToSend.append("hsn", formData.hsn);
-
-        if (formData.productImage) {
-          formData.productImage.forEach((img) => {
-            if (img instanceof File) {
-              formDataToSend.append("productImage", img);
-            }
-          });
-        }
-
-        if (
-          formData.additionalImages &&
-          Array.isArray(formData.additionalImages)
-        ) {
-          formData.additionalImages.forEach((img) => {
-            formDataToSend.append("additionalImages", img);
-          });
-        }
-
-        formDataToSend.append(
-          "lowStockAlert",
-          String(formData.lowStockAlert === true)
-        );
-        formDataToSend.append("tagAndLabel", formData.tagsLabel);
-        formDataToSend.append(
-          "refundable",
-          String(formData.refundable === "Yes" || formData.refundable === true)
-        );
-        formDataToSend.append(
-          "productStatus",
-          String(formData.productStatus === "active")
-        );
-        formDataToSend.append("description", formData.description);
-
-        formDataToSend.append(
-          "applicableForCustomer",
-          String(formData.isApplicableToCustomer === true)
-        );
-
-        formDataToSend.append(
-          "customerDiscount",
-          String(Number(formData.customerDiscunt))
-        );
-        formDataToSend.append(
-          "customerTax",
-          String(Number(formData.customerTax))
-        );
-
-        formDataToSend.append(
-          "applicableForWholesale",
-          String(formData.isApplicableToWholesaler === true)
-        );
-
-        formDataToSend.append(
-          "wholesalerDiscount",
-          String(Number(formData.wholeSalerDiscunt))
-        );
-        formDataToSend.append(
-          "wholesalerTax",
-          String(Number(formData.wholeSalerTax))
-        );
-
-        // formDataToSend.append(
-        //   "wholesalerAttribute",
-        //   JSON.stringify(formData.wholesalerAttribute)
-        // );
-        // formDataToSend.append(
-        //   "customerAttribute",
-        //   JSON.stringify(formData.customerAttribute)
-        // );
-
-        formDataToSend.append("metaTitle", formData.metaTitle);
-        formDataToSend.append("metaKeyword", formData.metaKey);
-        formDataToSend.append("metaDesc", formData.metaDescription);
-        formDataToSend.append("delivery", formData.selectDeliveryOption);
-        formDataToSend.append("lowStockQuantity", formData.lowStockQuantity);
-        formDataToSend.append("quantityPerPack", formData.quantityPerPack);
-        formDataToSend.append("packingType", formData.packingType);
-        // formDataToSend.append(
-        //   "isIncentive",
-        //   String(formData.isIncentive === true)
-        // );
-        // formDataToSend.append(
-        //   "showToLineman",
-        //   String(formData.showToLineman === true)
-        // );
-
-        // Send sizes separately to match backend schema
-        if (sizes.as_568a_standard.length > 0) {
-          formDataToSend.append("as_568a_standard", JSON.stringify(sizes.as_568a_standard));
-        }
-        if (sizes.jis_b_2401_standard.length > 0) {
-          formDataToSend.append("jis_b_2401_standard", JSON.stringify(sizes.jis_b_2401_standard));
-        }
-
-
-
-        formDataToSend.append("id", selector.id);
-        const response = await productApi.updateproduct(
-          formDataToSend,
-          selector.id
-        );
-
-        if (response.status) {
-          setTimeout(() => {
-            handleClose();
-          }, 2000);
-        }
-      }
+    if (isEditing) {
+      fd.append("id", selector.id);
+      const r = await productApi.updateproduct(fd, selector.id);
+      if (r.status) setTimeout(handleClose, 2000);
+    }
+    else {
+      const r = await productApi.productcreate(fd);
+      if (r.status) setTimeout(handleClose, 2000);
     }
   };
 
-  const handleDeleteImage = (indexToRemove) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      productImage: prevData.productImage.filter((_, i) => i !== indexToRemove),
-    }));
+  const handleClose = () => {
+    dispatch(handleFormProduct({ view: false, isEdit: false, id: "" }));
+    setSizes({ as_568a_standard: [], jis_b_2401_standard: [] });
+    setVariantRows([]); setSelectedExtraColumns([]);
+    setIsTechnicalSpecsOpen(false); setIsVariantOpen(false);
+    setTimeout(() => navigate("/product"), 300);
   };
 
-  const handleDeleteAdditionalImage = (indexToRemove) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      additionalImages: prevData.additionalImages.filter(
-        (_, i) => i !== indexToRemove
-      ),
-    }));
-  };
-
-  const formatHeaderName = (header) => {
-    const specialCases = {
-      sku: "SKU",
-      stock: "Stock",
-      maxlimit: "Max Limit",
-      shippingweight: "Shipping Weight",
-      wholesalermrp: "Wholesaler MRP",
-      silver: "Silver Price",
-      gold: "Gold Price",
-      platinum: "Platinum Price",
-      price: "Price",
-      customermrp: "Customer MRP",
-    };
-
-    const lowerHeader = header.toLowerCase();
-    if (specialCases[lowerHeader]) {
-      return specialCases[lowerHeader];
-    }
-
-    return header
-      .split(/(?=[A-Z])/)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
-
-  if (isLoading) {
-    return <>Loading....</>;
-  }
+  if (isLoading) return <div className="p-5 text-center">Loading...</div>;
 
   return (
     <div className="page-content">
@@ -1358,1402 +454,604 @@ const CreateProductListLayer = () => {
         <div className="row">
           <div className="col-lg-12">
             <div id="addproduct-accordion" className="custom-accordion">
-              {/* General Info Section */}
+
+              {/* ══════════════════════════════════════════════════
+                  01 — GENERAL INFO
+              ══════════════════════════════════════════════════ */}
               <div className="card mb-4">
-                <a
-                  href="#addproduct-productinfo-collapse"
-                  className={`text-body ${isExpanded ? "" : "collapsed"}`}
-                  data-bs-toggle="collapse"
-                  aria-expanded={isExpanded}
-                  aria-controls="addproduct-productinfo-collapse"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setIsExpanded(!isExpanded);
-                  }}
-                >
+                <a href="#gen-collapse" className={`text-body ${isExpanded ? "" : "collapsed"}`}
+                  data-bs-toggle="collapse" aria-expanded={isExpanded}
+                  onClick={(e) => { e.preventDefault(); setIsExpanded(!isExpanded); }}>
                   <div className="p-4">
                     <div className="d-flex align-items-center">
                       <div className="flex-shrink-0 me-3">
-                        <div className="avatar">
-                          <div className="avatar-title custom-avatar rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center">
-                            <h5 className="text-primary font-size-17 mb-0">
-                              01
-                            </h5>
-                          </div>
-                        </div>
+                        <div className="avatar"><div className="avatar-title custom-avatar rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center"><h5 className="text-primary font-size-17 mb-0">01</h5></div></div>
                       </div>
                       <div className="flex-grow-1 overflow-hidden">
                         <h5 className="font-size-16 mb-1">General Info</h5>
-                        <p className="text-muted text-truncate mb-0">
-                          Fill all information below
-                        </p>
+                        <p className="text-muted text-truncate mb-0">Fill all information below</p>
                       </div>
-                      <div className="flex-shrink-0">
-                        <i
-                          className={`mdi mdi-chevron-${isExpanded ? "up" : "down"
-                            } accor-down-icon font-size-24`}
-                        ></i>
-                      </div>
+                      <i className={`mdi mdi-chevron-${isExpanded ? "up" : "down"} accor-down-icon font-size-24`}></i>
                     </div>
                   </div>
                 </a>
-
-                <div
-                  id="addproduct-productinfo-collapse"
-                  className={`collapse ${isExpanded ? "show" : ""}`}
-                  data-bs-parent="#addproduct-accordion"
-                >
+                <div id="gen-collapse" className={`collapse ${isExpanded ? "show" : ""}`} data-bs-parent="#addproduct-accordion">
                   <div className="p-4 border-top">
-                    <form>
-                      <div className="row">
-                        <div className="col-lg-4">
-                          <div className="mb-3">
-                            <label className="form-label" htmlFor="category">
-                              Category
-                            </label>
-                            <select
-                              id="category"
-                              name="category"
-                              className="form-control"
-                              value={formData.category}
-                              onChange={(e) => {
-                                handleChange(e);
-                                categoryDtls(e.target.value);
-                              }}
-                            >
-                              <option value="">Select Category</option>
-                              {categoryData?.map((cat) => (
-                                <option key={cat._id} value={cat._id}>
-                                  {cat.name}
-                                </option>
-                              ))}
-                            </select>
-                            {errors.category && (
-                              <div className="text-danger">
-                                {errors.category}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="col-lg-4">
-                          <div className="mb-3">
-                            <label className="form-label" htmlFor="subCategory">
-                              Sub Category
-                            </label>
-                            <select
-                              id="subCategory"
-                              name="subCategory"
-                              className="form-control"
-                              value={formData.subCategory}
-                              onChange={(e) => {
-                                handleChange(e);
-                                // childCategoryDtls(e.target.value);
-                              }}
-                            >
-                              <option value="">Select Sub Category</option>
-                              {subCategoryData?.map((sub) => (
-                                <option key={sub._id} value={sub._id}>
-                                  {sub.name}
-                                </option>
-                              ))}
-                            </select>
-                            {errors.subCategory && (
-                              <div className="text-danger">
-                                {errors.subCategory}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="col-lg-4">
-                          <div className="mb-3">
-                            <label
-                              className="form-label"
-                              htmlFor="childCategory"
-                            >
-                              Child Category
-                            </label>
-                            <select
-                              id="childCategory"
-                              name="childCategory"
-                              className="form-control"
-                              value={formData.childCategory}
-                              onChange={handleChange}
-                              styles={{
-                                option: (provided) => ({
-                                  ...provided,
-                                  height: "100px",
-                                  padding: "10px",
-                                }),
-                              }}
-                            >
-                              <option value="">Select Child Category</option>
-                              {childCategoryData?.map((child) => (
-                                <option key={child._id} value={child._id}>
-                                  {child.name}
-                                </option>
-                              ))}
-                            </select>
-                            {errors.childCategory && (
-                              <div className="text-danger">
-                                {errors.childCategory}
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                    <div className="row">
+                      <div className="col-lg-4 mb-3">
+                        <label className="form-label">Category</label>
+                        <select name="category" className="form-control" value={formData.category} onChange={(e) => { handleChange(e); categoryDtls(e.target.value); }}>
+                          <option value="">Select Category</option>
+                          {categoryData?.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+                        </select>
+                        {errors.category && <div className="text-danger small">{errors.category}</div>}
                       </div>
-
-                      <div className="row">
-                        <div className="col-lg-3">
-                          <div className="mb-3">
-                            <label className="form-label" htmlFor="brand">
-                              Brand
-                            </label>
-                            <select
-                              id="brand"
-                              name="brand"
-                              className="form-select"
-                              value={formData.brand}
-                              onChange={handleChange}
-                            >
-                              <option value="">Select Brand</option>
-                              {brandData?.map((bramd) => (
-                                <option key={bramd._id} value={bramd._id}>
-                                  {bramd.name}
-                                </option>
-                              ))}
-                            </select>
-                            {errors.brand && (
-                              <div className="text-danger">{errors.brand}</div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="col-lg-3">
-                          <div className="mb-3">
-                            <label className="form-label" htmlFor="productName">
-                              Product name
-                            </label>
-                            <input
-                              id="productName"
-                              name="productName"
-                              type="text"
-                              className="form-control"
-                              value={formData.productName}
-                              onChange={handleChange}
-                            />
-                            {errors.productName && (
-                              <div className="text-danger">
-                                {errors.productName}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="col-lg-3">
-                          <div className="mb-3">
-                            <label
-                              htmlFor="shortDescription"
-                              className="form-label"
-                            >
-                              Short Description
-                            </label>
-                            <textarea
-                              id="shortDescription"
-                              name="shortDescription"
-                              className="form-control"
-                              rows="1"
-                              value={formData.shortDescription}
-                              onChange={handleChange}
-                            ></textarea>
-                          </div>
-                        </div>
-                        <div className="col-lg-3">
-                          <div className="mb-3">
-                            <label className="form-label" htmlFor="slug">
-                              Slug
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              name="slug"
-                              value={formData.slug}
-                              onChange={handleChange}
-                            />
-
-                            {errors.slug && (
-                              <div className="text-danger">{errors.slug}</div>
-                            )}
-                          </div>
-                        </div>
+                      <div className="col-lg-4 mb-3">
+                        <label className="form-label">Sub Category</label>
+                        <select name="subCategory" className="form-control" value={formData.subCategory} onChange={handleChange}>
+                          <option value="">Select Sub Category</option>
+                          {subCategoryData?.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
+                        </select>
+                        {errors.subCategory && <div className="text-danger small">{errors.subCategory}</div>}
                       </div>
-                      <div className="row">
-                        <div className="col-md-3">
-                          <div className="mb-3">
-                            <label htmlFor="packingType" className="form-label">
-                              Packing Type
-                            </label>
-                            <select
-                              className="form-select"
-                              id="packingType"
-                              name="packingType"
-                              value={formData.packingType}
-                              onChange={handleChange}
-                            >
-                              <option value="">Select Packing Type</option>
-                              <option value="Bag">Bag</option>
-                              <option value="Box">Box</option>
-                            </select>
-                            {errors.packingType && (
-                              <div className="text-danger">
-                                {errors.packingType}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="col-md-3">
-                          <div className="mb-3">
-                            <label
-                              htmlFor="quantityPerPack"
-                              className="form-label"
-                            >
-                              Quantity Per Pack (Bag/Box)
-                            </label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              id="quantityPerPack"
-                              name="quantityPerPack"
-                              value={formData.quantityPerPack}
-                              onChange={handleChange}
-                              min={0}
-                            />
-
-                            {errors.quantityPerPack && (
-                              <div className="text-danger">
-                                {errors.quantityPerPack}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="col-lg-3">
-                          <div className="mb-3">
-                            <label className="form-label" htmlFor="Hsn">
-                              HSN Code
-                            </label>
-                            <input
-                              id=""
-                              name="hsn"
-                              type="text"
-                              className="form-control"
-                              value={formData.hsn}
-                              onChange={handleChange}
-                            />
-                            {errors.hsn && (
-                              <div className="text-danger">{errors.hsn}</div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="col-lg-3">
-                          <div className="mb-3">
-                            <label htmlFor="tagsLabel" className="form-label">
-                              Tags &amp; Label
-                            </label>
-                            <select
-                              id="tagsLabel"
-                              className="form-select"
-                              name="tagsLabel"
-                              value={formData.tagsLabel}
-                              onChange={handleChange}
-                            >
-                              <option>Select</option>
-                              <option>Best Seller</option>
-                              <option>New Arrival</option>
-                              <option>Top Rated</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="col-md-3">
-                          <div className="mb-3">
-                            <label htmlFor="refundable" className="form-label">
-                              Refundable
-                            </label>
-                            <select
-                              className="form-select"
-                              id="refundable"
-                              aria-label="Refundable select"
-                              name="refundable"
-                              value={formData.refundable}
-                              onChange={handleChange}
-                            >
-                              <option value="yes">Yes</option>
-                              <option value="no">No</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="col-md-3">
-                          <div className="mb-3">
-                            <label
-                              htmlFor="productStatus"
-                              className="form-label"
-                            >
-                              Product Status
-                            </label>
-                            <select
-                              className="form-select"
-                              id="productStatus"
-                              aria-label="Product status select"
-                              name="productStatus"
-                              value={formData.productStatus}
-                              onChange={handleChange}
-                            >
-                              <option value="active">Active</option>
-                              <option value="inactive">Inactive</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div className="row align-items-center">
-                          <div className="col-lg-4 col-md-6 mb-3">
-                            <div className="d-flex align-items-center">
-                              <label
-                                htmlFor="lowStockAlert"
-                                className="form-label mb-0 me-3"
-                                style={{ whiteSpace: "nowrap" }}
-                              >
-                                Low Stock Alert
-                              </label>
-
-                              <input
-                                id="lowStockAlert"
-                                name="lowStockAlert"
-                                type="checkbox"
-                                className="form-check-input"
-                                checked={formData.lowStockAlert}
-                                onChange={handleChangeCheckBox}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="col-lg-4 col-md-6 mb-3">
-                            {formData.lowStockAlert && (
-                              <div className="d-flex flex-column">
-                                <label
-                                  htmlFor="lowStockQuantity"
-                                  className="form-label mb-1"
-                                >
-                                  Alert Quantity
-                                </label>
-                                <input
-                                  id="lowStockQuantity"
-                                  name="lowStockQuantity"
-                                  type="number"
-                                  className="form-control"
-                                  value={formData.lowStockQuantity || ""}
-                                  onChange={handleChange}
-                                  min="1"
-                                  style={{ maxWidth: "150px" }}
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                      <div className="col-lg-4 mb-3">
+                        <label className="form-label">Child Category</label>
+                        <select name="childCategory" className="form-control" value={formData.childCategory} onChange={handleChange}>
+                          <option value="">Select Child Category</option>
+                          {childCategoryData?.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+                        </select>
+                        {errors.childCategory && <div className="text-danger small">{errors.childCategory}</div>}
                       </div>
-
-                      {/* <div className="row mb-3">
-                        <div className="col-md-3 d-flex align-items-center">
-                          <div className="form-check pt-4">
-                            <label
-                              className="form-check-label ms-2"
-                              htmlFor="isIncentive"
-                            >
-                              Is Incentive
-                            </label>
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                              id="isIncentive"
-                              name="isIncentive"
-                              checked={formData.isIncentive}
-                              onChange={handleChangeCheckBox}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="col-md-3 d-flex align-items-center">
-                          <div className="form-check pt-4">
-                            <label
-                              className="form-check-label ms-2"
-                              htmlFor="showToLineman"
-                            >
-                              Show to Lineman
-                            </label>
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                              id="showToLineman"
-                              name="showToLineman"
-                              checked={formData.showToLineman}
-                              onChange={handleChangeCheckBox}
-                            />
-                          </div>
-                        </div>
-                      </div> */}
-
-                      <div className="row">
-                        <div className="col-xl-12">
-                          <div className="card ">
-                            <div className="card-header">
-                              <h4 className="card-title mb-0">Description</h4>
-                            </div>
-                            <div className="card-body">
-                              <CKEditor
-                                editor={ClassicEditor}
-                                data={formData.description}
-                                onChange={handleEditorChange}
-                                className=""
-                                config={{
-                                  licenseKey: "GPL",
-                                  toolbar: [
-                                    "undo",
-                                    "redo",
-                                    "heading",
-                                    "|",
-                                    "bold",
-                                    "italic",
-                                    "link",
-                                    "imageUpload",
-                                    "insertTable",
-                                    "blockQuote",
-                                    "bulletedList",
-                                    "numberedList",
-                                    "|",
-                                    "outdent",
-                                    "indent",
-                                    "|",
-                                  ],
-                                }}
-                                style={{ minHeight: "300px" }}
-                              />
-                            </div>
-                          </div>
-                        </div>
+                      <div className="col-lg-3 mb-3">
+                        <label className="form-label">Brand</label>
+                        <select name="brand" className="form-select" value={formData.brand} onChange={handleChange}>
+                          <option value="">Select Brand</option>
+                          {brandData?.map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
+                        </select>
+                        {errors.brand && <div className="text-danger small">{errors.brand}</div>}
                       </div>
-                    </form>
-                  </div>
-                </div>
-              </div>
-
-              {/* Product Sizes Section */}
-              <div className="card mb-4">
-                <a
-                  href="#technical-specs-collapse"
-                  className={`text-body ${isTechnicalSpecsOpen ? "" : "collapsed"}`}
-                  data-bs-toggle="collapse"
-                  aria-expanded={isTechnicalSpecsOpen}
-                  aria-controls="technical-specs-collapse"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setIsTechnicalSpecsOpen(!isTechnicalSpecsOpen);
-                  }}
-                >
-                  <div className="p-4">
-                    <div className="d-flex align-items-center">
-                      <div className="flex-shrink-0 me-3">
-                        <div className="avatar">
-                          <div className="avatar-title custom-avatar rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center">
-                            <h5 className="text-primary font-size-17 mb-0">02</h5>
-                          </div>
-                        </div>
+                      <div className="col-lg-3 mb-3">
+                        <label className="form-label">Product Name</label>
+                        <input type="text" name="productName" className="form-control" value={formData.productName} onChange={handleChange} />
+                        {errors.productName && <div className="text-danger small">{errors.productName}</div>}
                       </div>
-                      <div className="flex-grow-1 overflow-hidden">
-                        <h5 className="font-size-16 mb-1">Technical Specifications</h5>
-                        <p className="text-muted text-truncate mb-0">
-                          Add product technical specifications and measurements
-                        </p>
+                      <div className="col-lg-3 mb-3">
+                        <label className="form-label">Short Description</label>
+                        <textarea name="shortDescription" className="form-control" rows="1" value={formData.shortDescription} onChange={handleChange} />
                       </div>
-                      <div className="flex-shrink-0">
-                        <i
-                          className={`mdi mdi-chevron-${isTechnicalSpecsOpen ? "up" : "down"} accor-down-icon font-size-24`}
-                        ></i>
+                      <div className="col-lg-3 mb-3">
+                        <label className="form-label">Slug</label>
+                        <input type="text" name="slug" className="form-control" value={formData.slug} onChange={handleChange} />
+                        {errors.slug && <div className="text-danger small">{errors.slug}</div>}
                       </div>
-                    </div>
-                  </div>
-                </a>
-
-                <div
-                  id="technical-specs-collapse"
-                  className={`collapse ${isTechnicalSpecsOpen ? "show" : ""}`}
-                  data-bs-parent="#addproduct-accordion"
-                >
-                  <div className="p-4 border-top">
-
-                    {/* AS 568A Standard Table */}
-                    <div className="mb-5">
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h6 className="mb-0 text-primary">
-                          <i className="mdi mdi-circle-medium me-1"></i>
-                          AS 568A Standard
-                        </h6>
-                        <Button
-                          onClick={handleAddAS568ASize}
-                          leftIcon={<IconPlus size={14} />}
-                          variant="light"
-                          color="blue"
-                          size="sm"
-                        >
-                          Add AS 568A Size
-                        </Button>
+                      <div className="col-md-3 mb-3">
+                        <label className="form-label">Packing Type</label>
+                        <select name="packingType" className="form-select" value={formData.packingType} onChange={handleChange}>
+                          <option value="">Select</option><option>Bag</option><option>Box</option>
+                        </select>
+                        {errors.packingType && <div className="text-danger small">{errors.packingType}</div>}
                       </div>
-
-                      {sizes.as_568a_standard.length > 0 ? (
-                        <div className="table-responsive" style={{ overflowX: 'auto' }}>
-                          <table className="table table-bordered" style={{ fontSize: '12px' }}>
-                            <thead>
-                              <tr>
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>AS 568A SIZE</th>
-                                <th colSpan="4" className="text-center">METRIC MEASUREMENTS IN MILLIMETERS</th>
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>SKU</th>
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Stock</th>
-                                {/* <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Max Limit</th> */}
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Weight</th>
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Customer MRP</th>
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Price</th>
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Action</th>
-                              </tr>
-                              <tr>
-                                {/* Metric Headers */}
-                                <th>ID</th>
-                                <th>±</th>
-                                <th>CS</th>
-                                <th>±</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {sizes.as_568a_standard.map((size, index) => (
-                                <tr key={index}>
-                                  {/* AS 568A Size Code */}
-                                  <td>
-                                    <TextInput
-                                      placeholder="A0001"
-                                      value={size.sizeCode}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'sizeCode', e.target.value)}
-                                      style={{ minWidth: '70px', fontSize: '11px' }}
-                                    />
-                                  </td>
-
-                                  {/* Metric mm (ID with tolerance) */}
-                                  <td>
-                                    <TextInput
-                                      placeholder="0.74"
-                                      value={size.metric_id_mm}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'metric_id_mm', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="0.10"
-                                      value={size.metric_id_tolerance_mm}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'metric_id_tolerance_mm', e.target.value)}
-                                      style={{ minWidth: '50px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="1.02"
-                                      value={size.metric_cs_mm}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'metric_cs_mm', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="0.08"
-                                      value={size.metric_cs_tolerance_mm}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'metric_cs_tolerance_mm', e.target.value)}
-                                      style={{ minWidth: '50px', fontSize: '11px' }}
-                                    />
-                                  </td>
-
-                                  {/* Additional Fields */}
-                                  <td>
-                                    <TextInput
-                                      placeholder="SKU"
-                                      value={size.sku}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'sku', e.target.value)}
-                                      style={{ minWidth: '80px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="Stock"
-                                      value={size.stock}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'stock', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  {/* <td>
-                                    <TextInput
-                                      placeholder="Max Limit"
-                                      value={size.maxLimit}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'maxLimit', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td> */}
-                                  <td>
-                                    <TextInput
-                                      placeholder="Weight"
-                                      value={size.weight}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'weight', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="Customer MRP"
-                                      value={size.customermrp}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'customermrp', e.target.value)}
-                                      style={{ minWidth: '80px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="Price"
-                                      value={size.price}
-                                      onChange={(e) => handleSizeChange('as_568a_standard', index, 'price', e.target.value)}
-                                      style={{ minWidth: '80px', fontSize: '11px' }}
-                                    />
-                                  </td>
-
-                                  {/* Action */}
-                                  <td>
-                                    <ActionIcon
-                                      onClick={() => handleRemoveSize('as_568a_standard', index)}
-                                      color="red"
-                                      variant="light"
-                                      size="xs"
-                                      title="Remove"
-                                    >
-                                      <IconTrash size={12} />
-                                    </ActionIcon>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <div className="text-center py-3 border rounded">
-                          <p className="text-muted mb-2">No AS 568A sizes added yet</p>
-                          <Button
-                            onClick={handleAddAS568ASize}
-                            leftIcon={<IconPlus size={14} />}
-                            variant="outline"
-                            color="blue"
-                            size="sm"
-                          >
-                            Add First AS 568A Size
-                          </Button>
+                      <div className="col-md-3 mb-3">
+                        <label className="form-label">Quantity Per Pack</label>
+                        <input type="number" name="quantityPerPack" className="form-control" min={0} value={formData.quantityPerPack} onChange={handleChange} />
+                        {errors.quantityPerPack && <div className="text-danger small">{errors.quantityPerPack}</div>}
+                      </div>
+                      <div className="col-lg-3 mb-3">
+                        <label className="form-label">HSN Code</label>
+                        <input type="text" name="hsn" className="form-control" value={formData.hsn} onChange={handleChange} />
+                        {errors.hsn && <div className="text-danger small">{errors.hsn}</div>}
+                      </div>
+                      <div className="col-lg-3 mb-3">
+                        <label className="form-label">Tags &amp; Label</label>
+                        <select name="tagsLabel" className="form-select" value={formData.tagsLabel} onChange={handleChange}>
+                          <option>Select</option><option>Best Seller</option><option>New Arrival</option><option>Top Rated</option>
+                        </select>
+                      </div>
+                      <div className="col-md-3 mb-3">
+                        <label className="form-label">Refundable</label>
+                        <select name="refundable" className="form-select" value={formData.refundable} onChange={handleChange}>
+                          <option value="Yes">Yes</option><option value="No">No</option>
+                        </select>
+                      </div>
+                      <div className="col-md-3 mb-3">
+                        <label className="form-label">Product Status</label>
+                        <select name="productStatus" className="form-select" value={formData.productStatus} onChange={handleChange}>
+                          <option value="active">Active</option><option value="inactive">Inactive</option>
+                        </select>
+                      </div>
+                      <div className="col-lg-3 mb-3 d-flex align-items-center gap-2 pt-4">
+                        <input type="checkbox" name="lowStockAlert" className="form-check-input" checked={formData.lowStockAlert} onChange={handleChangeCheckBox} />
+                        <label className="form-label mb-0">Low Stock Alert</label>
+                      </div>
+                      {formData.lowStockAlert && (
+                        <div className="col-lg-3 mb-3">
+                          <label className="form-label">Alert Quantity</label>
+                          <input type="number" name="lowStockQuantity" className="form-control" min="1" value={formData.lowStockQuantity || ""} onChange={handleChange} />
                         </div>
                       )}
                     </div>
-
-                    {/* JIS B 2401 Standard Table */}
-                    <div>
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h6 className="mb-0 text-success">
-                          <i className="mdi mdi-circle-medium me-1"></i>
-                          JIS B 2401 Standard
-                        </h6>
-                        <Button
-                          onClick={handleAddJISSize}
-                          leftIcon={<IconPlus size={14} />}
-                          variant="light"
-                          color="green"
-                          size="sm"
-                        >
-                          Add JIS Size
-                        </Button>
+                    <div className="card mt-2">
+                      <div className="card-header"><h4 className="card-title mb-0">Description</h4></div>
+                      <div className="card-body">
+                        <CKEditor editor={ClassicEditor} data={formData.description} onChange={handleEditorChange}
+                          config={{ licenseKey: "GPL", toolbar: ["undo", "redo", "heading", "|", "bold", "italic", "link", "bulletedList", "numberedList", "|", "outdent", "indent"] }} />
                       </div>
-
-                      {sizes.jis_b_2401_standard.length > 0 ? (
-                        <div className="table-responsive">
-                          <table className="table table-bordered" style={{ fontSize: '12px' }}>
-                            <thead>
-                              <tr>
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>JIS B 2401 SIZE</th>
-                                <th colSpan="4" className="text-center">MEASUREMENTS IN MILLIMETERS</th>
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>SKU</th>
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Stock</th>
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Weight</th>
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Customer MRP</th>
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Price</th>
-                                <th rowSpan="2" style={{ verticalAlign: 'middle' }}>Action</th>
-                              </tr>
-                              <tr>
-                                {/* Metric Headers */}
-                                <th>ID</th>
-                                <th>±</th>
-                                <th>CS</th>
-                                <th>±</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {sizes.jis_b_2401_standard.map((size, index) => (
-                                <tr key={index}>
-                                  {/* JIS Size Code */}
-                                  <td>
-                                    <TextInput
-                                      placeholder="G25 or P25"
-                                      value={size.sizeCode}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'sizeCode', e.target.value)}
-                                      style={{ minWidth: '70px', fontSize: '11px' }}
-                                    />
-                                  </td>
-
-                                  {/* Metric mm (ID with tolerance) */}
-                                  <td>
-                                    <TextInput
-                                      placeholder="24.40"
-                                      value={size.metric_id_mm}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'metric_id_mm', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="0.25"
-                                      value={size.metric_id_tolerance_mm}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'metric_id_tolerance_mm', e.target.value)}
-                                      style={{ minWidth: '50px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="3.10"
-                                      value={size.metric_cs_mm}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'metric_cs_mm', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="0.10"
-                                      value={size.metric_cs_tolerance_mm}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'metric_cs_tolerance_mm', e.target.value)}
-                                      style={{ minWidth: '50px', fontSize: '11px' }}
-                                    />
-                                  </td>
-
-                                  <td>
-                                    <TextInput
-                                      placeholder="SKU"
-                                      value={size.sku}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'sku', e.target.value)}
-                                      style={{ minWidth: '80px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="Stock"
-                                      value={size.stock}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'stock', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="Weight"
-                                      value={size.weight}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'weight', e.target.value)}
-                                      style={{ minWidth: '60px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="Customer MRP"
-                                      value={size.customermrp}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'customermrp', e.target.value)}
-                                      style={{ minWidth: '80px', fontSize: '11px' }}
-                                    />
-                                  </td>
-                                  <td>
-                                    <TextInput
-                                      placeholder="Price"
-                                      value={size.price}
-                                      onChange={(e) => handleSizeChange('jis_b_2401_standard', index, 'price', e.target.value)}
-                                      style={{ minWidth: '80px', fontSize: '11px' }}
-                                    />
-                                  </td>
-
-                                  {/* Action */}
-                                  <td>
-                                    <ActionIcon
-                                      onClick={() => handleRemoveSize('jis_b_2401_standard', index)}
-                                      color="red"
-                                      variant="light"
-                                      size="xs"
-                                      title="Remove"
-                                    >
-                                      <IconTrash size={12} />
-                                    </ActionIcon>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <div className="text-center py-3 border rounded">
-                          <p className="text-muted mb-2">No JIS B 2401 sizes added yet</p>
-                          <Button
-                            onClick={handleAddJISSize}
-                            leftIcon={<IconPlus size={14} />}
-                            variant="outline"
-                            color="green"
-                            size="sm"
-                          >
-                            Add First JIS Size
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="text-muted small mt-3">
-                      <p className="mb-1">
-                        <i className="mdi mdi-information-outline me-1"></i>
-                        <strong>AS 568A:</strong> NOMINAL (fraction inches), STANDARD (decimal inches), METRIC (mm)
-                      </p>
-                      <p className="mb-0">
-                        <i className="mdi mdi-information-outline me-1"></i>
-                        <strong>JIS B 2401:</strong> G-series (static seal), P-series (dynamic seal) - Metric measurements
-                      </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Attributes Section */}
-              {/* <div className="card mb-4">
-                <div className="p-4">
-                  <div
-                    className="d-flex align-items-center"
-                    onClick={() => setIsAttributesOpen(!isAttributesOpen)}
-                  >
-                    <div className="flex-shrink-0 me-3">
-                      <div className="avatar">
-                        <div className="avatar-title custom-avatar rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center">
-                          <h5 className="text-primary font-size-17 mb-0">04</h5>
+              {/* ══════════════════════════════════════════════════
+                  02 — TECHNICAL SPECS (O-rings only)
+              ══════════════════════════════════════════════════ */}
+              {isOringCategory && (
+                <div className="card mb-4">
+                  <a href="#tech-collapse" className={`text-body ${isTechnicalSpecsOpen ? "" : "collapsed"}`}
+                    data-bs-toggle="collapse" aria-expanded={isTechnicalSpecsOpen}
+                    onClick={(e) => { e.preventDefault(); setIsTechnicalSpecsOpen(!isTechnicalSpecsOpen); }}>
+                    <div className="p-4">
+                      <div className="d-flex align-items-center">
+                        <div className="flex-shrink-0 me-3"><div className="avatar"><div className="avatar-title custom-avatar rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center"><h5 className="text-primary font-size-17 mb-0">02</h5></div></div></div>
+                        <div className="flex-grow-1 overflow-hidden">
+                          <h5 className="font-size-16 mb-1">Technical Specifications</h5>
+                          <p className="text-muted text-truncate mb-0">AS 568A & JIS B 2401 standard sizes</p>
                         </div>
+                        <i className={`mdi mdi-chevron-${isTechnicalSpecsOpen ? "up" : "down"} accor-down-icon font-size-24`}></i>
                       </div>
                     </div>
-                    <div className="flex-grow-1 overflow-hidden">
-                      <h5 className="font-size-16 mb-1">Attributes</h5>
-                      <p className="text-muted text-truncate mb-0">
-                        Fill all information below
-                      </p>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <i
-                        className={`mdi ${isAttributesOpen
-                          ? "mdi-chevron-up"
-                          : "mdi-chevron-down"
-                          } accor-down-icon font-size-24 cursor-pointer`}
-                        onClick={() => setIsAttributesOpen(!isAttributesOpen)}
-                      ></i>
-                    </div>
-                  </div>
-                </div>
-                {isAttributesOpen && (
-                  <div className="p-4 border-top">
-                    <h5 className="font-size-18 mt-5 mb-4">
-                      Customer Attribute
-                    </h5>
-                    <form>
-                      <div className="row">
-                        <div>
-                          <MultiSelect
-                            label="Select Attributes"
-                            placeholder="Pick one or more"
-                            data={attributeData.map((attr) => ({
-                              value: attr._id,
-                              label: attr.name,
-                            }))}
-                            value={formData.customerAttribute.attributeId}
-                            onChange={(selected) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                customerAttribute: {
-                                  ...prev.customerAttribute,
-                                  attributeId: selected,
-                                },
-                              }))
-                            }
-                            searchable
-                            nothingFound="No options"
-                          />
-                          {errors.customerAttribute && (
-                            <p className="text-danger">
-                              {errors.customerAttribute}
-                            </p>
-                          )}
-                          <Button mt="md" onClick={generateTableDataCustomer}>
-                            Generate Table
-                          </Button>
-
-                          {formData.customerAttribute.rowData.length > 0 && (
-                            <table className="table mt-4">
+                  </a>
+                  <div id="tech-collapse" className={`collapse ${isTechnicalSpecsOpen ? "show" : ""}`}>
+                    <div className="p-4 border-top">
+                      {/* AS 568A */}
+                      <div className="mb-5">
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <h6 className="mb-0 text-primary"><i className="mdi mdi-circle-medium me-1"></i>AS 568A Standard</h6>
+                          <Button onClick={handleAddAS568ASize} leftIcon={<IconPlus size={14} />} variant="light" color="blue" size="sm">Add AS 568A Size</Button>
+                        </div>
+                        {sizes.as_568a_standard.length > 0 ? (
+                          <div className="table-responsive">
+                            <table className="table table-bordered" style={{ fontSize: "12px" }}>
                               <thead>
                                 <tr>
-                                  {columnsCustomer.map((col, idx) => (
-                                    <th key={idx}>{formatHeaderName(col)}</th>
-                                  ))}
-                                  <th>Action</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>AS 568A SIZE</th>
+                                  <th colSpan="4" className="text-center">METRIC MEASUREMENTS IN MILLIMETERS</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>SKU</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Stock</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Weight</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Cust. MRP</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Price</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Action</th>
                                 </tr>
+                                <tr><th>ID</th><th>±</th><th>CS</th><th>±</th></tr>
                               </thead>
                               <tbody>
-                                {formData.customerAttribute.rowData.map(
-                                  (row, rowIndex) => (
-                                    <React.Fragment key={rowIndex}>
-                                      <tr key={rowIndex}>
-                                        {columnsCustomer.map((col) => (
-                                          <td key={col}>
-                                            {[
-                                              "sku",
-                                              "stock",
-                                              "maxLimit",
-                                              "shippingWeight",
-                                              "customermrp",
-                                              "price",
-                                            ].includes(col)
-                                              ? (
-                                                <TextInput
-                                                  value={row[col]}
-                                                  onChange={(e) =>
-                                                    handleRowChangeCustomer(
-                                                      rowIndex,
-                                                      col,
-                                                      e.target.value
-                                                    )
-                                                  }
-                                                />
-                                              ) : (
-                                                <Select
-                                                  data={getAttributeOptionsCustomer(
-                                                    col
-                                                  )}
-                                                  value={row[col]}
-                                                  onChange={(value) =>
-                                                    handleRowChangeCustomer(
-                                                      rowIndex,
-                                                      col,
-                                                      value
-                                                    )
-                                                  }
-                                                  searchable
-                                                />
-                                              )}
-                                          </td>
-                                        ))}
-                                        <td>
-                                          <ActionIcon
-                                            onClick={handleAddRowCustomer}
-                                            color="green"
-                                            title="Add Row"
-                                          >
-                                            <IconPlus />
-                                          </ActionIcon>
-                                          <ActionIcon
-                                            onClick={() =>
-                                              handleRemoveRowCustomer(rowIndex)
-                                            }
-                                            color="red"
-                                            title="Remove Row"
-                                            ml="md"
-                                          >
-                                            <IconTrash />
-                                          </ActionIcon>
-                                        </td>
-                                      </tr>
-                                      <tr>
-                                        <td colSpan={columnsCustomer.length + 1}>
-                                          {Object.keys(errors).map((key) => {
-                                            if (
-                                              key.startsWith(`customer_`) &&
-                                              key.endsWith(`_${rowIndex}`)
-                                            ) {
-                                              return (
-                                                <p
-                                                  key={key}
-                                                  className="text-danger"
-                                                  size="sm"
-                                                  style={{ display: "block" }}
-                                                >
-                                                  {errors[key]}
-                                                </p>
-                                              );
-                                            }
-                                            return null;
-                                          })}
-                                          {errors[rowIndex] && (
-                                            <p
-                                              size="sm"
-                                              className="text-danger"
-                                            >
-                                              {errors[rowIndex]}
-                                            </p>
-                                          )}
-                                        </td>
-                                      </tr>
-                                    </React.Fragment>
-                                  )
-                                )}
+                                {sizes.as_568a_standard.map((size, idx) => (
+                                  <tr key={idx}>
+                                    {[["sizeCode", "A0001", "70px"], ["metric_id_mm", "0.74", "60px"], ["metric_id_tolerance_mm", "0.10", "50px"], ["metric_cs_mm", "1.02", "60px"], ["metric_cs_tolerance_mm", "0.08", "50px"], ["sku", "SKU", "80px"], ["stock", "0", "60px"], ["weight", "g", "60px"], ["customermrp", "MRP", "80px"], ["price", "₹", "80px"]].map(([field, ph, minW]) => (
+                                      <td key={field}><TextInput placeholder={ph} value={size[field]} onChange={(e) => handleSizeChange("as_568a_standard", idx, field, e.target.value)} style={{ minWidth: minW, fontSize: "11px" }} /></td>
+                                    ))}
+                                    <td><ActionIcon onClick={() => handleRemoveSize("as_568a_standard", idx)} color="red" variant="light" size="xs"><IconTrash size={12} /></ActionIcon></td>
+                                  </tr>
+                                ))}
                               </tbody>
                             </table>
-                          )}
-                          <div className="row mt-3">
-                            <div className="col-lg-6 mb-3">
-                              <label className="form-label">
-                                Discount (if applicable)
-                              </label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                name="customerDiscunt"
-                                value={formData.customerDiscunt}
-                                onChange={handleChange}
-                              />
-                            </div>
-                            <div className="col-lg-6 mb-3">
-                              <label className="form-label">Tax %</label>
-                              <select
-                                className="form-control"
-                                name="customerTax"
-                                value={formData.customerTax}
-                                onChange={handleChange}
-                                style={{ width: "99.5%" }}
-                              >
-                                <option value="">Select</option>
-                                {taxes
-                                  .filter((tax) => tax.isActive)
-                                  .map((tax) => (
-                                    <option key={tax._id} value={tax.taxRate}>
-                                      {tax.taxName}
-                                    </option>
-                                  ))}
-                              </select>
-                            </div>
                           </div>
-                        </div>
-                      </div>
-                    </form>
-                  </div>
-                )}
-              </div> */}
-
-              {/* Meta Tags Section */}
-              <div className="card mb-4">
-                <div
-                  className="text-body collapsed"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#meta-tags-collapse"
-                  aria-expanded={isMetaTagsOpen}
-                  aria-controls="meta-tags-collapse"
-                  onClick={() => setIsMetaTagsOpen(!isMetaTagsOpen)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <div className="p-16">
-                    <div className="d-flex align-items-center">
-                      <div className="flex-shrink-0 me-3">
-                        <div className="avatar">
-                          <div className="avatar-title custom-avatar rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center">
-                            <h5 className="text-primary font-size-17 mb-0">
-                              05
-                            </h5>
+                        ) : (
+                          <div className="text-center py-3 border rounded">
+                            <p className="text-muted mb-2">No AS 568A sizes added yet</p>
+                            <Button onClick={handleAddAS568ASize} leftIcon={<IconPlus size={14} />} variant="outline" color="blue" size="sm">Add First AS 568A Size</Button>
                           </div>
+                        )}
+                      </div>
+                      {/* JIS B 2401 */}
+                      <div>
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <h6 className="mb-0 text-success"><i className="mdi mdi-circle-medium me-1"></i>JIS B 2401 Standard</h6>
+                          <Button onClick={handleAddJISSize} leftIcon={<IconPlus size={14} />} variant="light" color="green" size="sm">Add JIS Size</Button>
                         </div>
+                        {sizes.jis_b_2401_standard.length > 0 ? (
+                          <div className="table-responsive">
+                            <table className="table table-bordered" style={{ fontSize: "12px" }}>
+                              <thead>
+                                <tr>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>JIS SIZE</th>
+                                  <th colSpan="4" className="text-center">MEASUREMENTS IN MILLIMETERS</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>SKU</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Stock</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Weight</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Cust. MRP</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Price</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Action</th>
+                                </tr>
+                                <tr><th>ID</th><th>±</th><th>CS</th><th>±</th></tr>
+                              </thead>
+                              <tbody>
+                                {sizes.jis_b_2401_standard.map((size, idx) => (
+                                  <tr key={idx}>
+                                    {[["sizeCode", "G25/P25", "70px"], ["metric_id_mm", "24.40", "60px"], ["metric_id_tolerance_mm", "0.25", "50px"], ["metric_cs_mm", "3.10", "60px"], ["metric_cs_tolerance_mm", "0.10", "50px"], ["sku", "SKU", "80px"], ["stock", "0", "60px"], ["weight", "g", "60px"], ["customermrp", "MRP", "80px"], ["price", "₹", "80px"]].map(([field, ph, minW]) => (
+                                      <td key={field}><TextInput placeholder={ph} value={size[field]} onChange={(e) => handleSizeChange("jis_b_2401_standard", idx, field, e.target.value)} style={{ minWidth: minW, fontSize: "11px" }} /></td>
+                                    ))}
+                                    <td><ActionIcon onClick={() => handleRemoveSize("jis_b_2401_standard", idx)} color="red" variant="light" size="xs"><IconTrash size={12} /></ActionIcon></td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <div className="text-center py-3 border rounded">
+                            <p className="text-muted mb-2">No JIS B 2401 sizes added yet</p>
+                            <Button onClick={handleAddJISSize} leftIcon={<IconPlus size={14} />} variant="outline" color="green" size="sm">Add First JIS Size</Button>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex-grow-1 custom-title overflow-hidden">
-                        <h5 className="font-size-16 mb-1">Product Meta Tags</h5>
-                        <p className="text-muted text-truncate mb-0">
-                          Fill all information below
-                        </p>
-                      </div>
-                      <div className="flex-shrink-0">
-                        <i
-                          className={`mdi ${isMetaTagsOpen
-                            ? "mdi-chevron-up"
-                            : "mdi-chevron-down"
-                            } accor-down-icon font-size-24`}
-                        ></i>
+                      <div className="text-muted small mt-3">
+                        <p className="mb-1"><i className="mdi mdi-information-outline me-1"></i><strong>AS 568A:</strong> NOMINAL (fraction inches), STANDARD (decimal inches), METRIC (mm)</p>
+                        <p className="mb-0"><i className="mdi mdi-information-outline me-1"></i><strong>JIS B 2401:</strong> G-series (static), P-series (dynamic)</p>
                       </div>
                     </div>
                   </div>
                 </div>
+              )}
 
-                <div
-                  id="meta-tags-collapse"
-                  className={`collapse ${isMetaTagsOpen ? "show" : ""}`}
-                  data-bs-parent="#meta-tags-accordion"
-                >
-                  <div className="p-16 border-top">
-                    <form>
-                      <div className="row">
-                        <div className="col-lg-12 mb-3">
-                          <label className="form-label">Meta Title</label>
-                          <input
-                            type="text"
-                            name="metaTitle"
-                            value={formData.metaTitle}
-                            onChange={handleChange}
-                            className="form-control"
-                          />
+              {/* ══════════════════════════════════════════════════
+                  02 — PRODUCT VARIANTS with column picker
+                       (shown for all non-O-ring categories)
+              ══════════════════════════════════════════════════ */}
+              {!isOringCategory && (
+                <div className="card mb-4">
+                  <a href="#variant-collapse" className={`text-body ${isVariantOpen ? "" : "collapsed"}`}
+                    data-bs-toggle="collapse" aria-expanded={isVariantOpen}
+                    onClick={(e) => { e.preventDefault(); setIsVariantOpen(!isVariantOpen); }}>
+                    <div className="p-4">
+                      <div className="d-flex align-items-center">
+                        <div className="flex-shrink-0 me-3"><div className="avatar"><div className="avatar-title custom-avatar rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center"><h5 className="text-primary font-size-17 mb-0">02</h5></div></div></div>
+                        <div className="flex-grow-1 overflow-hidden">
+                          <h5 className="font-size-16 mb-1">Product Variants</h5>
+                          <p className="text-muted text-truncate mb-0">
+                            {variantRows.length > 0
+                              ? `${variantRows.length} variant(s) | ${fullColumnList.map(c => c.label).join(", ")}`
+                              : "Choose columns and add size / material / dimension variants"}
+                          </p>
                         </div>
-
-                        <div className="col-lg-12 mb-3">
-                          <label className="form-label">Meta Keywords</label>
-                          <input
-                            type="text"
-                            name="metaKey"
-                            value={formData.metaKey}
-                            onChange={handleChange}
-                            className="form-control"
-                          />
-                        </div>
-                        <div className="col-lg-12 mb-3">
-                          <label className="form-label">Meta Description</label>
-                          <textarea
-                            className="form-control"
-                            rows="4"
-                            name="metaDescription"
-                            value={formData.metaDescription}
-                            onChange={handleChange}
-                          ></textarea>
-                        </div>
+                        <i className={`mdi mdi-chevron-${isVariantOpen ? "up" : "down"} accor-down-icon font-size-24`}></i>
                       </div>
-                    </form>
+                    </div>
+                  </a>
+
+                  <div id="variant-collapse" className={`collapse ${isVariantOpen ? "show" : ""}`}>
+                    <div className="p-4 border-top">
+
+                      {/* ── Compact Column Selector ─────────────────────────── */}
+                      <div className="mb-3 px-3 py-2 rounded-2" style={{ background: "#f8f9fa", border: "1px solid #e9ecef" }}>
+                        <Group spacing="xs" align="center">
+                          <Text size="xs" weight={700} color="dimmed" sx={{ marginRight: '8px' }}>
+                            VARIANT FIELDS:
+                          </Text>
+
+                          {/* Common columns — permanently shown */}
+                          {COMMON_COLUMNS.map((col) => (
+                            <Tooltip label="Required field" key={col.key}>
+                              <Badge
+                                variant="outline"
+                                color="indigo"
+                                size="sm"
+                                styles={{ root: { textTransform: 'none', fontWeight: 500 } }}
+                              >
+                                {col.label}
+                              </Badge>
+                            </Tooltip>
+                          ))}
+
+                          {/* Selected extra columns — removable */}
+                          {selectedExtraColumns.map((col) => (
+                            <Badge
+                              key={col.key}
+                              color="teal"
+                              size="sm"
+                              variant="light"
+                              styles={{ root: { textTransform: 'none', fontWeight: 500 } }}
+                              rightSection={
+                                <ActionIcon
+                                  size="xs"
+                                  color="teal"
+                                  variant="transparent"
+                                  onClick={() => handleRemoveExtraColumn(col.key)}
+                                >
+                                  <IconX size={10} />
+                                </ActionIcon>
+                              }
+                            >
+                              {col.label}
+                            </Badge>
+                          ))}
+
+                          {/* Inline Add Button */}
+                          <ActionIcon
+                            variant="light"
+                            color="indigo"
+                            size="md"
+                            radius="xl"
+                            onClick={() => setShowColumnPicker(true)}
+                            title="Add Variant Column"
+                          >
+                            <IconPlus size={16} />
+                          </ActionIcon>
+                        </Group>
+
+                        <Modal
+                          opened={showColumnPicker}
+                          onClose={() => { setShowColumnPicker(false); setVariantSearch(""); }}
+                          title={<Text weight={600}>Add Variant Column</Text>}
+                          centered
+                          size="sm"
+                          overlayBlur={3}
+                        >
+                          <Stack spacing="md">
+                            <TextInput
+                              placeholder="Search or enter new variant name..."
+                              label="Column Name"
+                              icon={<IconSearch size={14} />}
+                              value={variantSearch}
+                              onChange={(e) => setVariantSearch(e.target.value)}
+                              autoFocus
+                              rightSection={
+                                variantSearch && (
+                                  <ActionIcon size="xs" onClick={() => setVariantSearch("")}>
+                                    <IconX size={12} />
+                                  </ActionIcon>
+                                )
+                              }
+                            />
+
+                            <ScrollArea h={200} offsetScrollbars>
+                              <Stack spacing={4}>
+                                <Text size="xs" color="dimmed" mb={4}>AVAILABLE FIELDS</Text>
+                                {unselectedColumns
+                                  .filter(col => col.label.toLowerCase().includes(variantSearch.toLowerCase()))
+                                  .map((col) => (
+                                    <Button
+                                      key={col.key}
+                                      variant="subtle"
+                                      color="gray"
+                                      size="sm"
+                                      fullWidth
+                                      styles={{ inner: { justifyContent: 'flex-start' } }}
+                                      onClick={() => {
+                                        handleAddExtraColumn(col);
+                                        setShowColumnPicker(false);
+                                        setVariantSearch("");
+                                      }}
+                                    >
+                                      {col.label}
+                                    </Button>
+                                  ))}
+
+                                {variantSearch.trim() !== "" && !unselectedColumns.some(col => col.label.toLowerCase() === variantSearch.toLowerCase()) && (
+                                  <Button
+                                    loading={isCreatingVariant}
+                                    leftIcon={<IconPlus size={14} />}
+                                    size="sm"
+                                    variant="filled"
+                                    color="indigo"
+                                    fullWidth
+                                    onClick={handleCreateNewVariant}
+                                    mt="xs"
+                                  >
+                                    Create & Add "{variantSearch}"
+                                  </Button>
+                                )}
+
+                                {variantSearch.trim() === "" && unselectedColumns.length === 0 && (
+                                  <Text size="xs" color="dimmed" align="center" py="sm">
+                                    No more fields found.
+                                  </Text>
+                                )}
+                              </Stack>
+                            </ScrollArea>
+                          </Stack>
+                        </Modal>
+                      </div>
+
+                      {/* ── Variant Table ────────────────────────────── */}
+                      {variantRows.length > 0 ? (
+                        <div className="table-responsive rounded-3 border bg-white" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                          <table className="table table-hover align-middle mb-0" style={{ fontSize: "13px" }}>
+                            <thead style={{ background: "#f9fafb" }}>
+                              <tr>
+                                <th style={{ width: "50px", textAlign: "center", color: "#6b7280", borderBottom: "1px solid #e5e7eb" }}>#</th>
+                                {selectedExtraColumns.map((col) => (
+                                  <th key={col.key} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                                    <Text weight={700} transform="uppercase">
+                                      {col.label}
+                                    </Text>
+                                  </th>
+                                ))}
+                                {COMMON_COLUMNS.map((col) => (
+                                  <th key={col.key} style={{ borderBottom: "1px solid #6b7280" }}>
+                                    <Text weight={800} transform="uppercase">
+                                      {col.label}
+                                    </Text>
+                                  </th>
+                                ))}
+                                <th style={{ width: "80px", textAlign: "center", color: "#6b7280", borderBottom: "1px solid #e5e7eb" }}>ACTION</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {variantRows.map((row, rowIdx) => (
+                                <tr key={rowIdx}>
+                                  <td className="text-center text-muted" style={{ fontSize: "11px" }}>{rowIdx + 1}</td>
+                                  {selectedExtraColumns.map((col) => (
+                                    <td key={col.key}>
+                                      <TextInput
+                                        size="xs"
+                                        variant="filled"
+                                        placeholder={`Enter ${col.label}...`}
+                                        error={errors[`v_${col.key}_${rowIdx}`]}
+                                        value={row[col.key] || ""}
+                                        onChange={(e) => handleVariantRowChange(rowIdx, col.key, e.target.value)}
+                                        styles={{ input: { fontSize: '12px' } }}
+                                      />
+                                    </td>
+                                  ))}
+                                  {COMMON_COLUMNS.map((col) => (
+                                    <td key={col.key}>
+                                      <TextInput
+                                        size="xs"
+                                        variant="filled"
+                                        type={col.type}
+                                        placeholder={col.placeholder}
+                                        error={errors[`v_${col.key}_${rowIdx}`]}
+                                        value={row[col.key] || ""}
+                                        onChange={(e) => handleVariantRowChange(rowIdx, col.key, e.target.value)}
+                                        styles={{ input: { fontSize: '12px' } }}
+                                      />
+                                    </td>
+                                  ))}
+                                  <td className="text-center">
+                                    <Tooltip label="Remove variation">
+                                      <ActionIcon
+                                        onClick={() => handleRemoveVariantRow(rowIdx)}
+                                        color="red"
+                                        variant="light"
+                                        size="sm"
+                                      >
+                                        <IconTrash size={14} />
+                                      </ActionIcon>
+                                    </Tooltip>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="py-5 border rounded-3 bg-light d-flex flex-column align-items-center justify-content-center" style={{ borderStyle: "dashed !important", background: "rgba(248, 249, 250, 0.5)" }}>
+                          <Stack align="center" spacing="xs">
+                            <IconColumns size={32} color="#adb5bd" stroke={1.5} />
+                            <Stack spacing={2} align="center">
+                              <Text weight={600} size="sm" color="gray.7">No variants configured</Text>
+                              <Text size="xs" color="dimmed" align="center">
+                                Add columns above to define attributes, then add variation rows.
+                              </Text>
+                            </Stack>
+                            <Button
+                              onClick={handleAddVariantRow}
+                              leftIcon={<IconPlus size={14} />}
+                              variant="light"
+                              color="indigo"
+                              size="sm"
+                              mt="sm"
+                            >
+                              Add First variation
+                            </Button>
+                          </Stack>
+                        </div>
+                      )}
+
+                      {/* Add row button */}
+                      {variantRows.length > 0 && (
+                        <Group position="right" mt="sm">
+                          <Button
+                            onClick={handleAddVariantRow}
+                            leftIcon={<IconPlus size={16} />}
+                            variant="subtle"
+                            color="indigo"
+                            size="sm"
+                            styles={{ root: { fontWeight: 500 } }}
+                          >
+                            Add another variation
+                          </Button>
+                        </Group>
+                      )}
+
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ══════════════════════════════════════════════════
+                  03 — META TAGS
+              ══════════════════════════════════════════════════ */}
+              <div className="card mb-4">
+                <div className="text-body collapsed" style={{ cursor: "pointer" }}
+                  data-bs-toggle="collapse" data-bs-target="#meta-collapse"
+                  onClick={() => setIsMetaTagsOpen(!isMetaTagsOpen)}>
+                  <div className="p-4">
+                    <div className="d-flex align-items-center">
+                      <div className="flex-shrink-0 me-3"><div className="avatar"><div className="avatar-title custom-avatar rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center"><h5 className="text-primary font-size-17 mb-0">03</h5></div></div></div>
+                      <div className="flex-grow-1 overflow-hidden">
+                        <h5 className="font-size-16 mb-1">Product Meta Tags</h5>
+                        <p className="text-muted text-truncate mb-0">SEO information</p>
+                      </div>
+                      <i className={`mdi mdi-chevron-${isMetaTagsOpen ? "up" : "down"} accor-down-icon font-size-24`}></i>
+                    </div>
+                  </div>
+                </div>
+                <div id="meta-collapse" className={`collapse ${isMetaTagsOpen ? "show" : ""}`}>
+                  <div className="p-4 border-top">
+                    <div className="col-12 mb-3"><label className="form-label">Meta Title</label><input type="text" name="metaTitle" className="form-control" value={formData.metaTitle} onChange={handleChange} /></div>
+                    <div className="col-12 mb-3"><label className="form-label">Meta Keywords</label><input type="text" name="metaKey" className="form-control" value={formData.metaKey} onChange={handleChange} /></div>
+                    <div className="col-12 mb-3"><label className="form-label">Meta Description</label><textarea name="metaDescription" className="form-control" rows="3" value={formData.metaDescription} onChange={handleChange} /></div>
                   </div>
                 </div>
               </div>
 
-              {/* Images Section */}
+              {/* ══════════════════════════════════════════════════
+                  04 — IMAGES
+              ══════════════════════════════════════════════════ */}
               <div className="card mb-4">
-                <a
-                  onClick={() => setImageOpen(!imageOpen)}
-                  className={`text-body collbodyd ${imageOpen ? "" : "collapsed"
-                    }`}
-                  aria-haspopup="true"
-                  aria-expanded={imageOpen}
-                  aria-controls="addproduct-manufacturer-collapse"
-                >
+                <a onClick={() => setImageOpen(!imageOpen)} className={`text-body ${imageOpen ? "" : "collapsed"}`} style={{ cursor: "pointer" }}>
                   <div className="p-4">
                     <div className="d-flex align-items-center">
-                      <div className="flex-shrink-0 me-3">
-                        <div className="avatar">
-                          <div className="avatar-title custom-avatar rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center">
-                            <h5 className="text-primary font-size-17 mb-0">
-                              06
-                            </h5>
-                          </div>
-                        </div>
-                      </div>
+                      <div className="flex-shrink-0 me-3"><div className="avatar"><div className="avatar-title custom-avatar rounded-circle bg-primary-subtle text-primary d-flex justify-content-center align-items-center"><h5 className="text-primary font-size-17 mb-0">04</h5></div></div></div>
                       <div className="flex-grow-1 overflow-hidden">
                         <h5 className="font-size-16 mb-1">Images</h5>
-                        <p className="text-muted text-truncate mb-0">
-                          Fill all images
-                        </p>
+                        <p className="text-muted text-truncate mb-0">Product & additional images</p>
                       </div>
-                      <div className="flex-shrink-0">
-                        <i
-                          className={`mdi accor-down-icon font-size-24 ${imageOpen ? "mdi-chevron-up" : "mdi-chevron-down"
-                            }`}
-                        ></i>
-                      </div>
+                      <i className={`mdi mdi-chevron-${imageOpen ? "up" : "down"} accor-down-icon font-size-24`}></i>
                     </div>
                   </div>
                 </a>
-
                 {imageOpen && (
                   <div className="p-4 border-top">
-                    <form>
-                      <div className="row">
-                        <div className="col-lg-6">
-                          <div className="row">
-                            <div className="col-lg-6">
-                              <div className="mb-3">
-                                <label
-                                  htmlFor="productImage"
-                                  className="form-label"
-                                >
-                                  Product image
-                                </label>
-                                <input
-                                  className="form-control"
-                                  type="file"
-                                  id="productImage"
-                                  name="productImage"
-                                  accept="image/*"
-                                  onChange={(e) =>
-                                    handleFileChange(e, "productImage")
-                                  }
-                                />
-                                {errors.productImage && (
-                                  <div className="text-danger">
-                                    {errors.productImage}
-                                  </div>
-                                )}
-                              </div>
-                              {selector.isEdit &&
-                                Array.isArray(formData.productImage) &&
-                                formData.productImage.map((imgObj, index) => (
-                                  <div
-                                    key={imgObj._id || index}
-                                    style={{
-                                      position: "relative",
-                                      display: "inline-block",
-                                      margin: "5px",
-                                    }}
-                                  >
-                                    <img
-                                      src={
-                                        imgObj instanceof File
-                                          ? URL.createObjectURL(imgObj)
-                                          : `${IMAGE_BASE_URL}${imgObj.docPath}/${imgObj.docName}`
-                                      }
-                                      alt={
-                                        imgObj.originalName || "Product Image"
-                                      }
-                                      className="img-thumbnail"
-                                      style={{ width: "50px", height: "50px" }}
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteImage(index)}
-                                      style={{
-                                        position: "absolute",
-                                        top: 0,
-                                        right: 0,
-                                        background: "red",
-                                        color: "white",
-                                        border: "none",
-                                        borderRadius: "50%",
-                                        width: "20px",
-                                        height: "20px",
-                                        cursor: "pointer",
-                                        fontSize: "12px",
-                                      }}
-                                    >
-                                      ×
-                                    </button>
-                                  </div>
-                                ))}
+                    <div className="row">
+                      <div className="col-lg-3">
+                        <label className="form-label">Product Image</label>
+                        <input className="form-control" type="file" accept="image/*" onChange={(e) => handleFileChange(e, "productImage")} />
+                        {errors.productImage && <div className="text-danger small">{errors.productImage}</div>}
+                        <div className="mt-2 d-flex flex-wrap gap-2">
+                          {(formData.productImage || []).map((img, i) => (
+                            <div key={i} style={{ position: "relative" }}>
+                              <img src={img instanceof File ? URL.createObjectURL(img) : `${IMAGE_BASE_URL}${img.docPath}/${img.docName}`} className="img-thumbnail" style={{ width: "60px", height: "60px", objectFit: "cover" }} />
+                              <button type="button" onClick={() => handleDeleteImage(i)} style={{ position: "absolute", top: 0, right: 0, background: "red", color: "white", border: "none", borderRadius: "50%", width: "18px", height: "18px", cursor: "pointer", fontSize: "11px" }}>×</button>
                             </div>
-
-                            <div className="col-lg-6">
-                              <div className="mb-3">
-                                <label
-                                  htmlFor="additionalImages"
-                                  className="form-label"
-                                >
-                                  Additional images
-                                </label>
-                                <input
-                                  className="form-control"
-                                  type="file"
-                                  id="additionalImages"
-                                  name="additionalImages"
-                                  multiple
-                                  onChange={(e) =>
-                                    handleFileChange(e, "additionalImages")
-                                  }
-                                />
-                              </div>
-                              {selector.isEdit &&
-                                Array.isArray(formData.additionalImages) &&
-                                formData.additionalImages.map(
-                                  (imgObj, index) => (
-                                    <div
-                                      key={imgObj._id || index}
-                                      style={{
-                                        position: "relative",
-                                        display: "inline-block",
-                                        margin: "5px",
-                                      }}
-                                    >
-                                      <img
-                                        src={
-                                          imgObj instanceof File
-                                            ? URL.createObjectURL(imgObj)
-                                            : `${IMAGE_BASE_URL}${imgObj.docPath}/${imgObj.docName}`
-                                        }
-                                        alt={
-                                          imgObj.originalName ||
-                                          "Additional Image"
-                                        }
-                                        className="img-thumbnail"
-                                        style={{
-                                          width: "50px",
-                                          height: "50px",
-                                        }}
-                                      />
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          handleDeleteAdditionalImage(index)
-                                        }
-                                        style={{
-                                          position: "absolute",
-                                          top: 0,
-                                          right: 0,
-                                          background: "red",
-                                          color: "white",
-                                          border: "none",
-                                          borderRadius: "50%",
-                                          width: "20px",
-                                          height: "20px",
-                                          cursor: "pointer",
-                                          fontSize: "12px",
-                                        }}
-                                      >
-                                        ×
-                                      </button>
-                                    </div>
-                                  )
-                                )}
-                            </div>
-                          </div>
+                          ))}
                         </div>
                       </div>
-                    </form>
+                      <div className="col-lg-3">
+                        <label className="form-label">Additional Images</label>
+                        <input className="form-control" type="file" multiple accept="image/*" onChange={(e) => handleFileChange(e, "additionalImages")} />
+                        <div className="mt-2 d-flex flex-wrap gap-2">
+                          {(formData.additionalImages || []).map((img, i) => (
+                            <div key={i} style={{ position: "relative" }}>
+                              <img src={img instanceof File ? URL.createObjectURL(img) : `${IMAGE_BASE_URL}${img.docPath}/${img.docName}`} className="img-thumbnail" style={{ width: "60px", height: "60px", objectFit: "cover" }} />
+                              <button type="button" onClick={() => handleDeleteAdditionalImage(i)} style={{ position: "absolute", top: 0, right: 0, background: "red", color: "white", border: "none", borderRadius: "50%", width: "18px", height: "18px", cursor: "pointer", fontSize: "11px" }}>×</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
+
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className='modal-footer mt-3'>
-          <button
-
-            type='button'
-            onClick={() => handleClose()}
-
-            className='form-wizard-next-btn btn btn-secondary me-1 px-32'
-          >
-            Cancel
-          </button>
-          <button
-
-            type='submit'
-            className='form-wizard-next-btn btn btn-primary px-32'
-            onClick={handleSubmit}
-          >
-            Save
-          </button>
+        <div className="modal-footer mt-3">
+          <button type="button" onClick={handleClose} className="btn btn-secondary me-1 px-32">Cancel</button>
+          <button type="submit" className="btn btn-primary px-32" onClick={handleSubmit}>Save</button>
         </div>
       </div>
     </div>
