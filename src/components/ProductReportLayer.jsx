@@ -6,11 +6,27 @@ import apiProvider from "../apiProvider/product"
 import * as XLSX from 'xlsx';
 
 const ProductReportLayer = () => {
+    const formatDate = (date) => {
+        const d = new Date(date);
+        let month = '' + (d.getMonth() + 1);
+        let day = '' + d.getDate();
+        const year = d.getFullYear();
+
+        if (month.length < 2) month = '0' + month;
+        if (day.length < 2) day = '0' + day;
+
+        return [year, month, day].join('-');
+    };
+
+    const today = new Date();
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setDate(today.getDate() - 10);
+
     const [formData, setFormData] = useState({
         productId: "",
         customerId: "",
-        fromDate: "2026-01-31",
-        toDate: "2026-02-18"
+        fromDate: formatDate(tenDaysAgo),
+        toDate: formatDate(today)
     });
     const [reportData, setReportData] = useState([]);
     const [loading, setLoading] = useState(false);

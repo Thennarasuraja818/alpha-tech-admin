@@ -856,24 +856,28 @@ const CreateProductListLayer = () => {
                       {variantRows.length > 0 ? (
                         <div className="table-responsive rounded-3 border bg-white" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
                           <table className="table table-hover align-middle mb-0" style={{ fontSize: "13px" }}>
-                            <thead style={{ background: "#f9fafb" }}>
+                            <thead style={{ background: "#1e293b", color: "#fff" }}>
                               <tr>
-                                <th style={{ width: "50px", textAlign: "center", color: "#6b7280", borderBottom: "1px solid #e5e7eb" }}>#</th>
+                                <th style={{ width: "50px", textAlign: "center", borderBottom: "1px solid #334155" }}>
+                                  <Text weight={800} transform="uppercase" color="white" size="xs">#</Text>
+                                </th>
                                 {selectedExtraColumns.map((col) => (
-                                  <th key={col.key} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                                    <Text weight={700} transform="uppercase">
+                                  <th key={col.key} style={{ borderBottom: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white">
                                       {col.label}
                                     </Text>
                                   </th>
                                 ))}
                                 {COMMON_COLUMNS.map((col) => (
-                                  <th key={col.key} style={{ borderBottom: "1px solid #6b7280" }}>
-                                    <Text weight={800} transform="uppercase">
+                                  <th key={col.key} style={{ borderBottom: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white">
                                       {col.label}
                                     </Text>
                                   </th>
                                 ))}
-                                <th style={{ width: "80px", textAlign: "center", color: "#6b7280", borderBottom: "1px solid #e5e7eb" }}>ACTION</th>
+                                <th style={{ width: "80px", textAlign: "center", borderBottom: "1px solid #334155" }}>
+                                  <Text weight={800} transform="uppercase" color="white">Action</Text>
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
