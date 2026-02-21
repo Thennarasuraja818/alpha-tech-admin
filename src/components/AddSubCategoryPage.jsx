@@ -123,7 +123,7 @@ const AddSubCategoryPage = () => {
             navigate("/category");
           }
         }, 800);
-      }else{
+      } else {
         toast(response.message);
       }
     } catch (err) {
@@ -180,19 +180,6 @@ const AddSubCategoryPage = () => {
             <form onSubmit={handleSubmit}>
               <div className="row gy-3">
 
-                {/* SUBCATEGORY NAME */}
-                <div className='col-sm-6'>
-                  <label className='form-label'>Sub Category Name</label>
-                  <input
-                    type='text'
-                    className='form-control'
-                    name="subCategoryName"
-                    value={formData.subCategoryName}
-                    onChange={handleChange}
-                  />
-                  {errors.subCategoryName && <div className="text-danger">{errors.subCategoryName}</div>}
-                </div>
-
                 {/* CATEGORY */}
                 <div className='col-sm-6'>
                   <label className='form-label'>Category</label>
@@ -208,6 +195,19 @@ const AddSubCategoryPage = () => {
                     ))}
                   </select>
                   {errors.parentCategory && <div className="text-danger">{errors.parentCategory}</div>}
+                </div>
+
+                {/* SUBCATEGORY NAME */}
+                <div className='col-sm-6'>
+                  <label className='form-label'>Sub Category Name</label>
+                  <input
+                    type='text'
+                    className='form-control'
+                    name="subCategoryName"
+                    value={formData.subCategoryName}
+                    onChange={handleChange}
+                  />
+                  {errors.subCategoryName && <div className="text-danger">{errors.subCategoryName}</div>}
                 </div>
 
                 {/* DESCRIPTION */}

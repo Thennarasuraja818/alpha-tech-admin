@@ -139,54 +139,54 @@ export default function ProductListPage() {
 
       ...(havePermissions
         ? [
-            {
-              header: "Actions",
-              size: 160,
-              cell: (info) => {
-                const productId = info.row.original._id;
-                return (
-                  <div className="d-flex align-items-center gap-10">
-                    {canView && (
-                      <button
-                        type="button"
-                        className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-                        onClick={() => {
-                          setSelectedProduct(info.row.original);
-                          setModalOpen(true);
-                        }}
-                      >
-                        <Icon
-                          icon="majesticons:eye-line"
-                          className="icon text-xl"
-                        />
-                      </button>
-                    )}
-                    {canEdit && (
-                      <button
-                        type="button"
-                        className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-                        onClick={() => handleEdit(productId)}
-                      >
-                        <Icon icon="lucide:edit" className="menu-icon" />
-                      </button>
-                    )}
-                    {canDelete && (
-                      <button
-                        type="button"
-                        className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-                        onClick={() => handleRemoveRow(productId)}
-                      >
-                        <Icon
-                          icon="fluent:delete-24-regular"
-                          className="menu-icon"
-                        />
-                      </button>
-                    )}
-                  </div>
-                );
-              },
+          {
+            header: "Actions",
+            size: 160,
+            cell: (info) => {
+              const productId = info.row.original._id;
+              return (
+                <div className="d-flex align-items-center gap-10">
+                  {canView && (
+                    <button
+                      type="button"
+                      className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                      onClick={() => {
+                        setSelectedProduct(info.row.original);
+                        setModalOpen(true);
+                      }}
+                    >
+                      <Icon
+                        icon="majesticons:eye-line"
+                        className="icon text-xl"
+                      />
+                    </button>
+                  )}
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                      onClick={() => handleEdit(productId)}
+                    >
+                      <Icon icon="lucide:edit" className="menu-icon" />
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      type="button"
+                      className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                      onClick={() => handleRemoveRow(productId)}
+                    >
+                      <Icon
+                        icon="fluent:delete-24-regular"
+                        className="menu-icon"
+                      />
+                    </button>
+                  )}
+                </div>
+              );
             },
-          ]
+          },
+        ]
         : []),
     ],
     [pageIndex, pageSize]
@@ -252,7 +252,7 @@ export default function ProductListPage() {
   };
 
   return (
-    <div className="card h-100 p-0 radius-12">
+    <div className="card h-100 pb-16 radius-12">
       <div className="card-header d-flex justify-content-between py-16 px-24">
         <div style={{ position: "relative" }}>
           <input
