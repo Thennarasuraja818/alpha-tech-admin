@@ -27,6 +27,8 @@ import "react-toastify/dist/ReactToastify.css";
 const COMMON_COLUMNS = [
   { key: "sku", label: "SKU", type: "text", placeholder: "SKU-001" },
   { key: "stock", label: "Stock", type: "number", placeholder: "0" },
+  { key: "weight", label: "Weight", type: "number", placeholder: "0.00" },
+  { key: "customermrp", label: "Cust. MRP", type: "number", placeholder: "0.00" },
   { key: "price", label: "Price", type: "number", placeholder: "0.00" },
 ];
 
@@ -234,6 +236,16 @@ const CreateProductListLayer = () => {
       updated[index] = { ...updated[index], [key]: value };
       return updated;
     });
+    // Clear error
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[`v_${key}_${index}`];
+      // If price or mrp changed, clear the comparison error too
+      if (key === "price" || key === "customermrp") {
+        delete newErrors[`v_customermrp_${index}`];
+      }
+      return newErrors;
+    });
   };
 
   const handleRemoveVariantRow = (index) => {
@@ -255,6 +267,16 @@ const CreateProductListLayer = () => {
       const copy = { ...prev, [standard]: [...prev[standard]] };
       copy[standard][index] = { ...copy[standard][index], [field]: value };
       return copy;
+    });
+    // Clear error
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[`${standard}_${field}_${index}`];
+      // If price or mrp changed, clear comparison error
+      if (field === "price" || field === "customermrp") {
+        delete newErrors[`${standard}_customermrp_${index}`];
+      }
+      return newErrors;
     });
   };
 
@@ -336,7 +358,15 @@ const CreateProductListLayer = () => {
   };
 
   // ─── Form handlers ─────────────────────────────────────────────────────────
-  const handleChange = (e) => { const { name, value } = e.target; setFormData((p) => ({ ...p, [name]: value })); };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((p) => ({ ...p, [name]: value }));
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[name];
+      return newErrors;
+    });
+  };
   const handleChangeCheckBox = (e) => { const { name, value, type, checked } = e.target; setFormData((p) => ({ ...p, [name]: type === "checkbox" ? checked : value })); };
   const handleEditorChange = (_, editor) => setFormData((p) => ({ ...p, description: editor.getData() }));
   const handleDeleteImage = (i) => setFormData((p) => ({ ...p, productImage: p.productImage.filter((_, idx) => idx !== i) }));
@@ -374,6 +404,19 @@ const CreateProductListLayer = () => {
           if (!val || val.toString().trim() === "") newErrors[`v_${key}_${i}`] = `${label} is required`;
           else if (type === "number" && isNaN(Number(val))) newErrors[`v_${key}_${i}`] = `${label} must be a number`;
           else if (type === "number" && Number(val) < 0) newErrors[`v_${key}_${i}`] = `${label} cannot be negative`;
+        });
+        if (Number(row.customermrp) < Number(row.price)) {
+          newErrors[`v_customermrp_${i}`] = "MRP must be >= Price";
+        }
+      });
+    }
+
+    if (isOringCategory) {
+      ["as_568a_standard", "jis_b_2401_standard"].forEach((std) => {
+        sizes[std].forEach((row, i) => {
+          if (Number(row.customermrp) < Number(row.price)) {
+            newErrors[`${std}_customermrp_${i}`] = "MRP must be >= Price";
+          }
         });
       });
     }
@@ -650,7 +693,16 @@ const CreateProductListLayer = () => {
                                 {sizes.as_568a_standard.map((size, idx) => (
                                   <tr key={idx}>
                                     {[["sizeCode", "A0001", "70px"], ["metric_id_mm", "0.74", "60px"], ["metric_id_tolerance_mm", "0.10", "50px"], ["metric_cs_mm", "1.02", "60px"], ["metric_cs_tolerance_mm", "0.08", "50px"], ["sku", "SKU", "80px"], ["stock", "0", "60px"], ["weight", "g", "60px"], ["customermrp", "MRP", "80px"], ["price", "₹", "80px"]].map(([field, ph, minW]) => (
-                                      <td key={field}><TextInput placeholder={ph} value={size[field]} onChange={(e) => handleSizeChange("as_568a_standard", idx, field, e.target.value)} style={{ minWidth: minW, fontSize: "11px" }} /></td>
+                                      <td key={field}>
+                                        <TextInput
+                                          placeholder={ph}
+                                          value={size[field]}
+                                          onChange={(e) => handleSizeChange("as_568a_standard", idx, field, e.target.value)}
+                                          style={{ minWidth: minW }}
+                                          styles={{ input: { fontSize: "11px" } }}
+                                          error={errors[`as_568a_standard_${field}_${idx}`]}
+                                        />
+                                      </td>
                                     ))}
                                     <td><ActionIcon onClick={() => handleRemoveSize("as_568a_standard", idx)} color="red" variant="light" size="xs"><IconTrash size={12} /></ActionIcon></td>
                                   </tr>
@@ -712,7 +764,16 @@ const CreateProductListLayer = () => {
                                 {sizes.jis_b_2401_standard.map((size, idx) => (
                                   <tr key={idx}>
                                     {[["sizeCode", "G25/P25", "70px"], ["metric_id_mm", "24.40", "60px"], ["metric_id_tolerance_mm", "0.25", "50px"], ["metric_cs_mm", "3.10", "60px"], ["metric_cs_tolerance_mm", "0.10", "50px"], ["sku", "SKU", "80px"], ["stock", "0", "60px"], ["weight", "g", "60px"], ["customermrp", "MRP", "80px"], ["price", "₹", "80px"]].map(([field, ph, minW]) => (
-                                      <td key={field}><TextInput placeholder={ph} value={size[field]} onChange={(e) => handleSizeChange("jis_b_2401_standard", idx, field, e.target.value)} style={{ minWidth: minW, fontSize: "11px" }} /></td>
+                                      <td key={field}>
+                                        <TextInput
+                                          placeholder={ph}
+                                          value={size[field]}
+                                          onChange={(e) => handleSizeChange("jis_b_2401_standard", idx, field, e.target.value)}
+                                          style={{ minWidth: minW }}
+                                          styles={{ input: { fontSize: "11px" } }}
+                                          error={errors[`jis_b_2401_standard_${field}_${idx}`]}
+                                        />
+                                      </td>
                                     ))}
                                     <td><ActionIcon onClick={() => handleRemoveSize("jis_b_2401_standard", idx)} color="red" variant="light" size="xs"><IconTrash size={12} /></ActionIcon></td>
                                   </tr>
