@@ -74,11 +74,6 @@ const AddChildCategoryPage = () => {
       setErrors(newErrors);
       return false;
     }
-    if (!/^[A-Za-z\s]+$/.test(formData.childCategoryName.trim())) {
-      newErrors.childCategoryName = "Child Category name must contain alphabets and spaces only. No numbers or special characters allowed.";
-      setErrors(newErrors);
-      return false;
-    }
     // if (!formData.displayOrder.trim()) {
     //     newErrors.displayOrder = 'Display Order is Required';
     // }
@@ -151,16 +146,16 @@ const AddChildCategoryPage = () => {
 
         // console.log(response, "response-g");
 
-      if (response.status) {
+        if (response.status) {
           toast(response.message);
 
           setTimeout(() => {
             if (returnTo === "subcategorylist") {
               navigate("/category?type=subcategorylist");
-            } 
+            }
             else if (returnTo === "childcategorylist") {
               navigate("/category?type=childcategorylist");
-            } 
+            }
             else {
               navigate("/category");
             }
@@ -181,7 +176,7 @@ const AddChildCategoryPage = () => {
             metaKeywords: "",
             status: true,
           });
-        }else{
+        } else {
           toast(response.message);
         }
 
@@ -293,26 +288,7 @@ const AddChildCategoryPage = () => {
                       <form onSubmit={handleSubmit}>
                         {/* First Row */}
                         <div className="row">
-                          <div className="col-lg-4">
-                            <div className="mb-3">
-                              <label className="form-label">
-                                Child Category Name
-                              </label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                name="childCategoryName"
-                                value={formData.childCategoryName}
-                                onChange={handleChange}
-                                required
-                              />
-                              {errors.childCategoryName && (
-                                <div className="text-danger">
-                                  {errors.childCategoryName}
-                                </div>
-                              )}
-                            </div>
-                          </div>
+
 
                           <div className="col-lg-4">
                             <div className="mb-3">
@@ -337,6 +313,27 @@ const AddChildCategoryPage = () => {
                               {errors.subCategory && (
                                 <div className="text-danger">
                                   {errors.subCategory}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="col-lg-4">
+                            <div className="mb-3">
+                              <label className="form-label">
+                                Child Category Name
+                              </label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="childCategoryName"
+                                value={formData.childCategoryName}
+                                onChange={handleChange}
+                                required
+                              />
+                              {errors.childCategoryName && (
+                                <div className="text-danger">
+                                  {errors.childCategoryName}
                                 </div>
                               )}
                             </div>
@@ -558,7 +555,7 @@ const AddChildCategoryPage = () => {
                               />
                             </div>
                           </div>
-                            <div className="col-lg-4">
+                          <div className="col-lg-4">
                             <div className="mb-3">
                               <label className="form-label">Status</label>
                               <select
@@ -580,29 +577,25 @@ const AddChildCategoryPage = () => {
                         </div>
 
                         {/* Form Actions */}
-                        <div className="row mb-4">
-                          <div className="col text-end">
-                            <button
-                              type="button"
-                              className="btn btn-danger"
-                              // onClick={handleCancel}
-                             onClick={() => {
-                      if (returnTo === "subcategorylist") navigate("/category?type=subcategorylist");
-                      else if (returnTo === "childcategorylist") navigate("/category?type=childcategorylist");
-                      else navigate("/category");
-                    }}
-                            >
-                              <i className="bx bx-x me-1"></i> Cancel
-                            </button>
+                        <div className='form-group text-end'>
+                          <button
+                            type="button"
+                            className='btn btn-secondary me-2 px-32'
+                            onClick={() => {
+                              if (returnTo === "subcategorylist") navigate("/category?type=subcategorylist");
+                              else if (returnTo === "childcategorylist") navigate("/category?type=childcategorylist");
+                              else navigate("/category");
+                            }}
+                          >
+                            Cancel
+                          </button>
 
-                            <button
-                              type="submit"
-                              className="btn btn-success ms-2"
-                              onClick={handleSubmit}
-                            >
-                              <i className="bx bx-file me-1"></i> Save
-                            </button>
-                          </div>
+                          <button
+                            type="submit"
+                            className='btn btn-primary px-32'
+                          >
+                            Save
+                          </button>
                         </div>
                       </form>
                     </div>

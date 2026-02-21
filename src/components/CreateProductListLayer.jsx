@@ -108,7 +108,8 @@ const CreateProductListLayer = () => {
   // Derived
   const isOringCategory = categoryData
     .find((c) => c._id === formData.category)
-    ?.name?.toLowerCase() === ORING_CATEGORY_NAME;
+    ?.name?.toLowerCase()
+    .replace(/[-\s]/g, "") === ORING_CATEGORY_NAME.toLowerCase().replace(/[-\s]/g, "");
 
   // Columns not yet added (available to pick)
   const unselectedColumns = availableExtraColumns.filter(
@@ -611,18 +612,39 @@ const CreateProductListLayer = () => {
                         {sizes.as_568a_standard.length > 0 ? (
                           <div className="table-responsive">
                             <table className="table table-bordered" style={{ fontSize: "12px" }}>
-                              <thead>
+                              <thead style={{ background: "#1e293b", color: "#fff" }}>
                                 <tr>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>AS 568A SIZE</th>
-                                  <th colSpan="4" className="text-center">METRIC MEASUREMENTS IN MILLIMETERS</th>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>SKU</th>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Stock</th>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Weight</th>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Cust. MRP</th>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Price</th>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Action</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">AS 568A SIZE</Text>
+                                  </th>
+                                  <th colSpan="4" className="text-center" style={{ verticalAlign: "middle", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">METRIC MEASUREMENTS IN MILLIMETERS</Text>
+                                  </th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">SKU</Text>
+                                  </th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">Stock</Text>
+                                  </th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">Weight</Text>
+                                  </th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">Cust. MRP</Text>
+                                  </th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">Price</Text>
+                                  </th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">Action</Text>
+                                  </th>
                                 </tr>
-                                <tr><th>ID</th><th>±</th><th>CS</th><th>±</th></tr>
+                                <tr>
+                                  <th style={{ textAlign: "center", border: "1px solid #334155" }}><Text weight={800} color="white" size="xs">ID</Text></th>
+                                  <th style={{ textAlign: "center", border: "1px solid #334155" }}><Text weight={800} color="white" size="xs">±</Text></th>
+                                  <th style={{ textAlign: "center", border: "1px solid #334155" }}><Text weight={800} color="white" size="xs">CS</Text></th>
+                                  <th style={{ textAlign: "center", border: "1px solid #334155" }}><Text weight={800} color="white" size="xs">±</Text></th>
+                                </tr>
                               </thead>
                               <tbody>
                                 {sizes.as_568a_standard.map((size, idx) => (
@@ -652,18 +674,39 @@ const CreateProductListLayer = () => {
                         {sizes.jis_b_2401_standard.length > 0 ? (
                           <div className="table-responsive">
                             <table className="table table-bordered" style={{ fontSize: "12px" }}>
-                              <thead>
+                              <thead style={{ background: "#1e293b", color: "#fff" }}>
                                 <tr>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>JIS SIZE</th>
-                                  <th colSpan="4" className="text-center">MEASUREMENTS IN MILLIMETERS</th>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>SKU</th>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Stock</th>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Weight</th>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Cust. MRP</th>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Price</th>
-                                  <th rowSpan="2" style={{ verticalAlign: "middle" }}>Action</th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">JIS SIZE</Text>
+                                  </th>
+                                  <th colSpan="4" className="text-center" style={{ verticalAlign: "middle", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">MEASUREMENTS IN MILLIMETERS</Text>
+                                  </th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">SKU</Text>
+                                  </th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">Stock</Text>
+                                  </th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">Weight</Text>
+                                  </th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">Cust. MRP</Text>
+                                  </th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">Price</Text>
+                                  </th>
+                                  <th rowSpan="2" style={{ verticalAlign: "middle", textAlign: "center", border: "1px solid #334155" }}>
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">Action</Text>
+                                  </th>
                                 </tr>
-                                <tr><th>ID</th><th>±</th><th>CS</th><th>±</th></tr>
+                                <tr>
+                                  <th style={{ textAlign: "center", border: "1px solid #334155" }}><Text weight={800} color="white" size="xs">ID</Text></th>
+                                  <th style={{ textAlign: "center", border: "1px solid #334155" }}><Text weight={800} color="white" size="xs">±</Text></th>
+                                  <th style={{ textAlign: "center", border: "1px solid #334155" }}><Text weight={800} color="white" size="xs">CS</Text></th>
+                                  <th style={{ textAlign: "center", border: "1px solid #334155" }}><Text weight={800} color="white" size="xs">±</Text></th>
+                                </tr>
                               </thead>
                               <tbody>
                                 {sizes.jis_b_2401_standard.map((size, idx) => (
@@ -722,135 +765,319 @@ const CreateProductListLayer = () => {
                     <div className="p-4 border-top">
 
                       {/* ── Compact Column Selector ─────────────────────────── */}
-                      <div className="mb-3 px-3 py-2 rounded-2" style={{ background: "#f8f9fa", border: "1px solid #e9ecef" }}>
-                        <Group spacing="xs" align="center">
-                          <Text size="xs" weight={700} color="dimmed" sx={{ marginRight: '8px' }}>
-                            VARIANT FIELDS:
-                          </Text>
+                      <div
+                        className="mb-3 px-4 py-3 rounded-3"
+                        style={{
+                          background: "#f8fafc",
+                          border: "1.5px solid #e2e8f0",
+                          boxShadow: "0 2px 8px rgba(15,23,42,0.05)",
+                        }}
+                      >
+                        <div className="d-flex align-items-center mb-3" style={{ gap: "8px" }}>
+                          <div
+                            style={{
+                              width: "4px", height: "16px", borderRadius: "4px",
+                              background: "#1e293b",
+                            }}
+                          />
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 800,
+                              color: "#475569",
+                              letterSpacing: "0.1em",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Variant Fields
+                          </span>
+                        </div>
 
+                        <Group spacing={6} align="center" style={{ flexWrap: "wrap" }}>
                           {/* Common columns — permanently shown */}
                           {COMMON_COLUMNS.map((col) => (
-                            <Tooltip label="Required field" key={col.key}>
-                              <Badge
-                                variant="outline"
-                                color="indigo"
-                                size="sm"
-                                styles={{ root: { textTransform: 'none', fontWeight: 500 } }}
+                            <Tooltip label="Required field — cannot be removed" key={col.key} withArrow>
+                              <div
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "5px",
+                                  padding: "5px 11px",
+                                  borderRadius: "8px",
+                                  background: "#dbeafe",
+                                  border: "1px solid #93c5fd",
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  color: "#1d4ed8",
+                                  cursor: "default",
+                                  userSelect: "none",
+                                }}
                               >
+                                <IconCheck size={10} stroke={3} color="#1d4ed8" />
                                 {col.label}
-                              </Badge>
+                              </div>
                             </Tooltip>
                           ))}
 
                           {/* Selected extra columns — removable */}
                           {selectedExtraColumns.map((col) => (
-                            <Badge
+                            <div
                               key={col.key}
-                              color="teal"
-                              size="sm"
-                              variant="light"
-                              styles={{ root: { textTransform: 'none', fontWeight: 500 } }}
-                              rightSection={
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                padding: "5px 8px 5px 11px",
+                                borderRadius: "8px",
+                                background: "#ffffff",
+                                border: "1.5px solid #cbd5e1",
+                                fontSize: "11px",
+                                fontWeight: 600,
+                                color: "#334155",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                              }}
+                            >
+                              {col.label}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveExtraColumn(col.key)}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  width: "16px",
+                                  height: "16px",
+                                  borderRadius: "50%",
+                                  background: "#fee2e2",
+                                  border: "1px solid #fecaca",
+                                  color: "#dc2626",
+                                  cursor: "pointer",
+                                  padding: 0,
+                                  flexShrink: 0,
+                                }}
+                                title={`Remove ${col.label}`}
+                              >
+                                <IconX size={9} stroke={3} />
+                              </button>
+                            </div>
+                          ))}
+
+                          {/* Add Button */}
+                          <button
+                            type="button"
+                            onClick={() => setShowColumnPicker(true)}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "5px",
+                              padding: "5px 12px",
+                              borderRadius: "8px",
+                              background: "#1e293b",
+                              border: "none",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              color: "#ffffff",
+                              cursor: "pointer",
+                              letterSpacing: "0.03em",
+                              transition: "background 0.15s ease",
+                              boxShadow: "0 2px 6px rgba(15,23,42,0.2)",
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = "#0f172a"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = "#1e293b"; }}
+                          >
+                            <IconPlus size={11} stroke={3} />
+                            Add Field
+                          </button>
+                        </Group>
+                      </div>
+
+                      {/* ── Column Picker Modal ─────────────────────────── */}
+                      <Modal
+                        opened={showColumnPicker}
+                        onClose={() => { setShowColumnPicker(false); setVariantSearch(""); }}
+                        title={
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <div
+                              style={{
+                                width: "30px", height: "30px", borderRadius: "8px",
+                                background: "#1e293b",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <IconColumns size={15} color="#fff" />
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 800, fontSize: "14px", color: "#0f172a", lineHeight: 1.2 }}>
+                                Add Variant Field
+                              </div>
+                              <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 500 }}>
+                                Search existing or create new
+                              </div>
+                            </div>
+                          </div>
+                        }
+                        centered
+                        size="sm"
+                        overlayBlur={3}
+                        styles={{
+                          modal: { borderRadius: "16px" },
+                          header: {
+                            padding: "16px 20px 14px",
+                            borderBottom: "1px solid #f1f5f9",
+                            background: "#fafafa",
+                            borderRadius: "16px 16px 0 0",
+                          },
+                          body: { padding: "16px 20px 20px" },
+                        }}
+                      >
+                        <Stack spacing="sm">
+                          <TextInput
+                            placeholder="Search or type new variant name..."
+                            icon={<IconSearch size={14} color="#94a3b8" />}
+                            value={variantSearch}
+                            onChange={(e) => setVariantSearch(e.target.value)}
+                            autoFocus
+                            styles={{
+                              input: {
+                                borderRadius: "10px",
+                                border: "1.5px solid #e2e8f0",
+                                fontSize: "13px",
+                                background: "#f8fafc",
+                                padding: "10px 14px 10px 36px",
+                                "&:focus": { borderColor: "#1e293b", background: "#fff" },
+                              },
+                            }}
+                            rightSection={
+                              variantSearch && (
                                 <ActionIcon
                                   size="xs"
-                                  color="teal"
-                                  variant="transparent"
-                                  onClick={() => handleRemoveExtraColumn(col.key)}
+                                  radius="xl"
+                                  variant="filled"
+                                  onClick={() => setVariantSearch("")}
+                                  styles={{ root: { background: "#cbd5e1", color: "#475569" } }}
                                 >
                                   <IconX size={10} />
                                 </ActionIcon>
-                              }
+                              )
+                            }
+                          />
+
+                          <div>
+                            <Text
+                              size="10px"
+                              weight={800}
+                              mb={6}
+                              style={{
+                                letterSpacing: "0.1em",
+                                textTransform: "uppercase",
+                                color: "#94a3b8",
+                              }}
                             >
-                              {col.label}
-                            </Badge>
-                          ))}
-
-                          {/* Inline Add Button */}
-                          <ActionIcon
-                            variant="light"
-                            color="indigo"
-                            size="md"
-                            radius="xl"
-                            onClick={() => setShowColumnPicker(true)}
-                            title="Add Variant Column"
-                          >
-                            <IconPlus size={16} />
-                          </ActionIcon>
-                        </Group>
-
-                        <Modal
-                          opened={showColumnPicker}
-                          onClose={() => { setShowColumnPicker(false); setVariantSearch(""); }}
-                          title={<Text weight={600}>Add Variant Column</Text>}
-                          centered
-                          size="sm"
-                          overlayBlur={3}
-                        >
-                          <Stack spacing="md">
-                            <TextInput
-                              placeholder="Search or enter new variant name..."
-                              label="Column Name"
-                              icon={<IconSearch size={14} />}
-                              value={variantSearch}
-                              onChange={(e) => setVariantSearch(e.target.value)}
-                              autoFocus
-                              rightSection={
-                                variantSearch && (
-                                  <ActionIcon size="xs" onClick={() => setVariantSearch("")}>
-                                    <IconX size={12} />
-                                  </ActionIcon>
-                                )
-                              }
-                            />
-
-                            <ScrollArea h={200} offsetScrollbars>
-                              <Stack spacing={4}>
-                                <Text size="xs" color="dimmed" mb={4}>AVAILABLE FIELDS</Text>
+                              Available Fields
+                            </Text>
+                            <ScrollArea h={190} offsetScrollbars>
+                              <Stack spacing={2}>
                                 {unselectedColumns
-                                  .filter(col => col.label.toLowerCase().includes(variantSearch.toLowerCase()))
+                                  .filter((col) =>
+                                    col.label.toLowerCase().includes(variantSearch.toLowerCase())
+                                  )
                                   .map((col) => (
-                                    <Button
+                                    <button
                                       key={col.key}
-                                      variant="subtle"
-                                      color="gray"
-                                      size="sm"
-                                      fullWidth
-                                      styles={{ inner: { justifyContent: 'flex-start' } }}
+                                      type="button"
                                       onClick={() => {
                                         handleAddExtraColumn(col);
                                         setShowColumnPicker(false);
                                         setVariantSearch("");
                                       }}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "10px",
+                                        width: "100%",
+                                        padding: "9px 12px",
+                                        borderRadius: "8px",
+                                        background: "transparent",
+                                        border: "1px solid transparent",
+                                        fontSize: "13px",
+                                        fontWeight: 500,
+                                        color: "#1e293b",
+                                        cursor: "pointer",
+                                        textAlign: "left",
+                                        transition: "all 0.1s ease",
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = "#f1f5f9";
+                                        e.currentTarget.style.borderColor = "#e2e8f0";
+                                        e.currentTarget.style.paddingLeft = "16px";
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = "transparent";
+                                        e.currentTarget.style.borderColor = "transparent";
+                                        e.currentTarget.style.paddingLeft = "12px";
+                                      }}
                                     >
                                       {col.label}
-                                    </Button>
+                                    </button>
                                   ))}
 
-                                {variantSearch.trim() !== "" && !unselectedColumns.some(col => col.label.toLowerCase() === variantSearch.toLowerCase()) && (
-                                  <Button
-                                    loading={isCreatingVariant}
-                                    leftIcon={<IconPlus size={14} />}
-                                    size="sm"
-                                    variant="filled"
-                                    color="indigo"
-                                    fullWidth
-                                    onClick={handleCreateNewVariant}
-                                    mt="xs"
-                                  >
-                                    Create & Add "{variantSearch}"
-                                  </Button>
-                                )}
+                                {variantSearch.trim() !== "" &&
+                                  !unselectedColumns.some(
+                                    (col) => col.label.toLowerCase() === variantSearch.toLowerCase()
+                                  ) && (
+                                    <button
+                                      type="button"
+                                      onClick={handleCreateNewVariant}
+                                      disabled={isCreatingVariant}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: "7px",
+                                        width: "100%",
+                                        padding: "10px 14px",
+                                        marginTop: "8px",
+                                        borderRadius: "10px",
+                                        background: "#1e293b",
+                                        fontSize: "13px",
+                                        fontWeight: 700,
+                                        color: "#fff",
+                                        cursor: isCreatingVariant ? "not-allowed" : "pointer",
+                                        opacity: isCreatingVariant ? 0.7 : 1,
+                                        transition: "all 0.15s ease",
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        if (!isCreatingVariant) {
+                                          e.currentTarget.style.background = "#0f172a";
+                                          e.currentTarget.style.borderColor = "#94a3b8";
+                                        }
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = "#1e293b";
+                                        e.currentTarget.style.borderColor = "#475569";
+                                      }}
+                                    >
+                                      {isCreatingVariant ? (
+                                        <Loader size={13} color="white" />
+                                      ) : (
+                                        <IconPlus size={13} stroke={3} />
+                                      )}
+                                      {isCreatingVariant ? "Creating..." : `Create & Add "${variantSearch}"`}
+                                    </button>
+                                  )}
 
                                 {variantSearch.trim() === "" && unselectedColumns.length === 0 && (
-                                  <Text size="xs" color="dimmed" align="center" py="sm">
-                                    No more fields found.
-                                  </Text>
+                                  <div style={{ textAlign: "center", padding: "24px 0" }}>
+                                    <IconCheck size={24} color="#86efac" style={{ marginBottom: "6px" }} />
+                                    <Text size="xs" color="dimmed">All fields have been added.</Text>
+                                  </div>
                                 )}
                               </Stack>
                             </ScrollArea>
-                          </Stack>
-                        </Modal>
-                      </div>
+                          </div>
+                        </Stack>
+                      </Modal>
 
                       {/* ── Variant Table ────────────────────────────── */}
                       {variantRows.length > 0 ? (
@@ -863,20 +1090,20 @@ const CreateProductListLayer = () => {
                                 </th>
                                 {selectedExtraColumns.map((col) => (
                                   <th key={col.key} style={{ borderBottom: "1px solid #334155" }}>
-                                    <Text weight={800} transform="uppercase" color="white">
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">
                                       {col.label}
                                     </Text>
                                   </th>
                                 ))}
                                 {COMMON_COLUMNS.map((col) => (
                                   <th key={col.key} style={{ borderBottom: "1px solid #334155" }}>
-                                    <Text weight={800} transform="uppercase" color="white">
+                                    <Text weight={800} transform="uppercase" color="white" size="xs">
                                       {col.label}
                                     </Text>
                                   </th>
                                 ))}
                                 <th style={{ width: "80px", textAlign: "center", borderBottom: "1px solid #334155" }}>
-                                  <Text weight={800} transform="uppercase" color="white">Action</Text>
+                                  <Text weight={800} transform="uppercase" color="white" size="xs">Action</Text>
                                 </th>
                               </tr>
                             </thead>
